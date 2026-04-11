@@ -25,6 +25,13 @@ const A4_WIDTH = 1123
 const A4_HEIGHT = 794
 const GRID_SIZE = 20
 const CANVAS_CUSTOM_PROPS = ['truecertType', 'placeholderKey', 'assetRole', 'assetKey', 'isLocked']
+const REQUIRED_FIELD_KEYS = ['candidateName', 'courseName', 'issueDate', 'issuerName']
+const REQUIRED_FIELD_LABELS = {
+  candidateName: 'Candidate Name',
+  courseName: 'Course',
+  issueDate: 'Issue Date',
+  issuerName: 'Issuer Name',
+}
 
 const PLACEHOLDER_VALUES = {
   candidate_name: '{{candidate_name}}',
@@ -58,6 +65,12 @@ const initialFormState = {
   grade: '',
   description: '',
 }
+
+const isTemplateJsonShapeValid = (value) =>
+  Boolean(value && typeof value === 'object' && Array.isArray(value.objects))
+
+const isAbortLikeError = (error) =>
+  error?.name === 'AbortError' || error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED'
 
 const ensureHexColor = (value, fallback) => {
   const normalized = String(value || '').trim()
@@ -165,6 +178,11 @@ const loadFabricImageFromUrl = async (fabricLib, url) => {
 
 const loadCanvasFromJson = (canvas, json) =>
   new Promise((resolve, reject) => {
+    if (!isTemplateJsonShapeValid(json)) {
+      reject(new Error('Template JSON is invalid.'))
+      return
+    }
+
     let settled = false
 
     const done = () => {
@@ -431,6 +449,7 @@ const CreateCertificatePage = () => {
   const [selectedState, setSelectedState] = useState(null)
   const [snapToGrid, setSnapToGrid] = useState(true)
   const [toasts, setToasts] = useState([])
+  const [canvasStatus, setCanvasStatus] = useState('initializing')
   const [loading, setLoading] = useState({
     templates: false,
     saveTemplate: false,
@@ -441,6 +460,15 @@ const CreateCertificatePage = () => {
   const canvasElementRef = useRef(null)
   const canvasRef = useRef(null)
   const fabricRef = useRef(null)
+  const isMountedRef = useRef(true)
+  const requestVersionRef = useRef({
+    templates: 0,
+    saveTemplate: 0,
+    loadTemplate: 0,
+    generate: 0,
+    asset: 0,
+  })
+  const qrAbortControllerRef = useRef(null)
   const snapToGridRef = useRef(snapToGrid)
   const toastTimeoutsRef = useRef([])
 
@@ -450,16 +478,45 @@ const CreateCertificatePage = () => {
   const watermarkInputRef = useRef(null)
   const backgroundInputRef = useRef(null)
 
+  const beginRequest = (key) => {
+    const nextVersion = (requestVersionRef.current[key] || 0) + 1
+    requestVersionRef.current[key] = nextVersion
+    return nextVersion
+  }
+
+  const isLatestRequest = (key, version) => requestVersionRef.current[key] === version
+
+  const removeToast = (id) => {
+    if (!isMountedRef.current) {
+      return
+    }
+
+    toastTimeoutsRef.current = toastTimeoutsRef.current.filter((entry) => {
+      if (entry.id !== id) {
+        return true
+      }
+
+      clearTimeout(entry.timer)
+      return false
+    })
+
+    setToasts((previous) => previous.filter((toast) => toast.id !== id))
+  }
+
   const pushToast = (type, message) => {
+    if (!isMountedRef.current) {
+      return
+    }
+
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`
 
     setToasts((previous) => [...previous, { id, type, message }])
 
     const timer = setTimeout(() => {
-      setToasts((previous) => previous.filter((toast) => toast.id !== id))
+      removeToast(id)
     }, 3800)
 
-    toastTimeoutsRef.current.push(timer)
+    toastTimeoutsRef.current.push({ id, timer })
   }
 
   const syncSelectedState = () => {
@@ -491,7 +548,12 @@ const CreateCertificatePage = () => {
 
     if (!canvas || !fabricLib) {
       if (!silent) {
-        pushToast('error', 'Canvas is still initializing. Please wait a moment.')
+        pushToast(
+          'error',
+          canvasStatus === 'error'
+            ? 'Canvas failed to initialize. Refresh the page and try again.'
+            : 'Canvas is still initializing. Please wait a moment.',
+        )
       }
       return null
     }
@@ -700,6 +762,7 @@ const CreateCertificatePage = () => {
   }
 
   const handleAssetSelected = async (role, event) => {
+    const requestVersion = beginRequest('asset')
     const selectedFile = event.target.files?.[0] || null
     event.target.value = ''
 
@@ -715,7 +778,7 @@ const CreateCertificatePage = () => {
     try {
       const dataUrl = await toDataUrl(selectedFile)
 
-      await withCanvas(async (canvas, fabricLib) => {
+      const didInsertAsset = await withCanvas(async (canvas, fabricLib) => {
         const image = await loadFabricImageFromUrl(fabricLib, dataUrl)
         const assetKey = `${role}_${Date.now()}`
 
@@ -768,7 +831,13 @@ const CreateCertificatePage = () => {
         canvas.setActiveObject(image)
         canvas.requestRenderAll()
         syncSelectedState()
+
+        return true
       })
+
+      if (!didInsertAsset || !isMountedRef.current || !isLatestRequest('asset', requestVersion)) {
+        return
+      }
 
       setAssetFilesByRole((previous) => ({
         ...previous,
@@ -776,7 +845,11 @@ const CreateCertificatePage = () => {
       }))
 
       pushToast('success', `${role.replaceAll(/([A-Z])/g, ' $1')} image added.`)
-    } catch {
+    } catch (error) {
+      if (isAbortLikeError(error) || !isMountedRef.current || !isLatestRequest('asset', requestVersion)) {
+        return
+      }
+
       pushToast('error', 'Failed to load the selected image on canvas.')
     }
   }
@@ -900,33 +973,65 @@ const CreateCertificatePage = () => {
     })
   }
 
+  const getCanvasTemplateJson = () => {
+    const canvas = canvasRef.current
+
+    if (!canvas) {
+      throw new Error('Canvas is not ready yet.')
+    }
+
+    const templateJson = canvas.toJSON(CANVAS_CUSTOM_PROPS)
+    if (!isTemplateJsonShapeValid(templateJson)) {
+      throw new Error('Canvas JSON is malformed. Reset the layout and try again.')
+    }
+
+    return templateJson
+  }
+
   const refreshTemplates = async () => {
-    updateLoading('templates', true)
+    const requestVersion = beginRequest('templates')
+    if (isMountedRef.current) {
+      updateLoading('templates', true)
+    }
 
     try {
       const response = await api.get('/certificates/templates')
+      if (!isMountedRef.current || !isLatestRequest('templates', requestVersion)) {
+        return
+      }
+
       setTemplates(response.data.templates || [])
-    } catch {
+    } catch (error) {
+      if (isAbortLikeError(error) || !isMountedRef.current || !isLatestRequest('templates', requestVersion)) {
+        return
+      }
+
       pushToast('error', 'Could not fetch templates from server.')
     } finally {
-      updateLoading('templates', false)
+      if (isMountedRef.current && isLatestRequest('templates', requestVersion)) {
+        updateLoading('templates', false)
+      }
     }
   }
 
   const saveTemplate = async () => {
-    const canvas = canvasRef.current
-    if (!canvas) {
-      pushToast('error', 'Canvas is not ready yet.')
+    let templateJson
+    try {
+      templateJson = getCanvasTemplateJson()
+    } catch (error) {
+      pushToast('error', error.message)
       return
     }
 
-    const templateJson = canvas.toJSON(CANVAS_CUSTOM_PROPS)
-    if (!Array.isArray(templateJson.objects) || templateJson.objects.length === 0) {
-      pushToast('error', 'Cannot save empty template. Add at least one object.')
+    if (templateJson.objects.length === 0) {
+      pushToast('error', 'Cannot save an empty template. Add at least one object.')
       return
     }
 
-    updateLoading('saveTemplate', true)
+    const requestVersion = beginRequest('saveTemplate')
+    if (isMountedRef.current) {
+      updateLoading('saveTemplate', true)
+    }
 
     try {
       const payload = {
@@ -935,15 +1040,25 @@ const CreateCertificatePage = () => {
       }
 
       const response = await api.post('/certificates/templates', payload)
+      if (!isMountedRef.current || !isLatestRequest('saveTemplate', requestVersion)) {
+        return
+      }
+
       const savedTemplate = response.data.template
 
       setSelectedTemplateId(savedTemplate.id)
       pushToast('success', 'Template saved successfully.')
       await refreshTemplates()
     } catch (error) {
+      if (isAbortLikeError(error) || !isMountedRef.current || !isLatestRequest('saveTemplate', requestVersion)) {
+        return
+      }
+
       pushToast('error', error.response?.data?.message || 'Template save failed.')
     } finally {
-      updateLoading('saveTemplate', false)
+      if (isMountedRef.current && isLatestRequest('saveTemplate', requestVersion)) {
+        updateLoading('saveTemplate', false)
+      }
     }
   }
 
@@ -959,17 +1074,28 @@ const CreateCertificatePage = () => {
       return
     }
 
-    updateLoading('loadTemplate', true)
+    const requestVersion = beginRequest('loadTemplate')
+    if (isMountedRef.current) {
+      updateLoading('loadTemplate', true)
+    }
 
     try {
       const response = await api.get(`/certificates/templates/${selectedTemplateId}`)
+      if (!isMountedRef.current || !isLatestRequest('loadTemplate', requestVersion)) {
+        return
+      }
+
       const template = response.data.template
 
-      if (!template?.templateJson) {
+      if (!isTemplateJsonShapeValid(template?.templateJson)) {
         throw new Error('Template JSON is missing.')
       }
 
       await loadCanvasFromJson(canvas, template.templateJson)
+      if (!isMountedRef.current || !isLatestRequest('loadTemplate', requestVersion)) {
+        return
+      }
+
       setFormData((previous) => ({
         ...previous,
         templateName: template.templateName || previous.templateName,
@@ -977,23 +1103,43 @@ const CreateCertificatePage = () => {
       syncSelectedState()
       pushToast('success', 'Template loaded into canvas.')
     } catch (error) {
+      if (isAbortLikeError(error) || !isMountedRef.current || !isLatestRequest('loadTemplate', requestVersion)) {
+        return
+      }
+
       pushToast('error', error.response?.data?.message || error.message || 'Failed to load template.')
     } finally {
-      updateLoading('loadTemplate', false)
+      if (isMountedRef.current && isLatestRequest('loadTemplate', requestVersion)) {
+        updateLoading('loadTemplate', false)
+      }
     }
   }
 
   const getQrDataUrl = async () => {
-    const response = await api.get('/certificates/qr-image', {
-      params: {
-        certificateId: formData.certificateId || 'PREVIEW-0001',
-      },
-      responseType: 'blob',
-    })
+    if (qrAbortControllerRef.current) {
+      qrAbortControllerRef.current.abort()
+    }
 
-    const blob = response.data
-    const qrDataUrl = await toDataUrl(blob)
-    return qrDataUrl
+    const controller = new AbortController()
+    qrAbortControllerRef.current = controller
+
+    try {
+      const response = await api.get('/certificates/qr-image', {
+        params: {
+          certificateId: formData.certificateId || 'PREVIEW-0001',
+        },
+        responseType: 'blob',
+        signal: controller.signal,
+      })
+
+      const blob = response.data
+      const qrDataUrl = await toDataUrl(blob)
+      return qrDataUrl
+    } finally {
+      if (qrAbortControllerRef.current === controller) {
+        qrAbortControllerRef.current = null
+      }
+    }
   }
 
   const renderResolvedCanvasImage = async () => {
@@ -1004,7 +1150,7 @@ const CreateCertificatePage = () => {
       throw new Error('Canvas is not initialized.')
     }
 
-    const json = canvas.toJSON(CANVAS_CUSTOM_PROPS)
+    const json = getCanvasTemplateJson()
 
     const exportElement = document.createElement('canvas')
     exportElement.width = A4_WIDTH
@@ -1016,138 +1162,156 @@ const CreateCertificatePage = () => {
       backgroundColor: '#ffffff',
     })
 
-    await loadCanvasFromJson(staticCanvas, json)
+    try {
+      await loadCanvasFromJson(staticCanvas, json)
 
-    const replacements = {
-      [PLACEHOLDER_VALUES.candidate_name]: formData.candidateName,
-      [PLACEHOLDER_VALUES.course_name]: formData.courseName,
-      [PLACEHOLDER_VALUES.issue_date]: formatIssueDate(formData.issueDate),
-      [PLACEHOLDER_VALUES.certificate_id]: formData.certificateId || 'AUTO-GENERATED',
-    }
-
-    const visitObject = (object) => {
-      if (isTextObject(object) && typeof object.text === 'string') {
-        object.set('text', replacePlaceholderText(object.text, replacements))
+      const replacements = {
+        [PLACEHOLDER_VALUES.candidate_name]: formData.candidateName,
+        [PLACEHOLDER_VALUES.course_name]: formData.courseName,
+        [PLACEHOLDER_VALUES.issue_date]: formatIssueDate(formData.issueDate),
+        [PLACEHOLDER_VALUES.certificate_id]: formData.certificateId || 'AUTO-GENERATED',
       }
 
-      if (typeof object.getObjects === 'function') {
-        object.getObjects().forEach(visitObject)
+      const visitObject = (object) => {
+        if (isTextObject(object) && typeof object.text === 'string') {
+          object.set('text', replacePlaceholderText(object.text, replacements))
+        }
+
+        if (typeof object.getObjects === 'function') {
+          object.getObjects().forEach(visitObject)
+        }
       }
-    }
 
-    staticCanvas.getObjects().forEach(visitObject)
+      staticCanvas.getObjects().forEach(visitObject)
 
-    const qrTarget = staticCanvas
-      .getObjects()
-      .find(
-        (object) =>
-          object?.placeholderKey === PLACEHOLDER_VALUES.qr_code || object?.truecertType === 'qr-placeholder',
-      )
+      const qrTarget = staticCanvas
+        .getObjects()
+        .find(
+          (object) =>
+            object?.placeholderKey === PLACEHOLDER_VALUES.qr_code || object?.truecertType === 'qr-placeholder',
+        )
 
-    if (qrTarget) {
-      const qrDataUrl = await getQrDataUrl()
-      const qrImage = await loadFabricImageFromUrl(fabricLib, qrDataUrl)
-      const bounds = qrTarget.getBoundingRect(true, true)
-      const centerPoint = qrTarget.getCenterPoint()
+      if (qrTarget) {
+        const qrDataUrl = await getQrDataUrl()
+        const qrImage = await loadFabricImageFromUrl(fabricLib, qrDataUrl)
+        const bounds = qrTarget.getBoundingRect(true, true)
+        const centerPoint = qrTarget.getCenterPoint()
 
-      qrImage.set({
-        left: centerPoint.x,
-        top: centerPoint.y,
-        originX: 'center',
-        originY: 'center',
-        angle: qrTarget.angle || 0,
-        selectable: false,
-        evented: false,
+        qrImage.set({
+          left: centerPoint.x,
+          top: centerPoint.y,
+          originX: 'center',
+          originY: 'center',
+          angle: qrTarget.angle || 0,
+          selectable: false,
+          evented: false,
+        })
+
+        const ratio = Math.min(
+          (bounds.width - 8) / (qrImage.width || 1),
+          (bounds.height - 8) / (qrImage.height || 1),
+        )
+        qrImage.scale(Math.max(ratio, 0.05))
+
+        staticCanvas.remove(qrTarget)
+        staticCanvas.add(qrImage)
+      }
+
+      staticCanvas.renderAll()
+
+      return staticCanvas.toDataURL({
+        format: 'png',
+        quality: 1,
+        multiplier: 2,
       })
+    } finally {
+      staticCanvas.dispose()
+    }
+  }
 
-      const ratio = Math.min((bounds.width - 8) / (qrImage.width || 1), (bounds.height - 8) / (qrImage.height || 1))
-      qrImage.scale(Math.max(ratio, 0.05))
-
-      staticCanvas.remove(qrTarget)
-      staticCanvas.add(qrImage)
+  const appendOptionalCertificateFields = (formPayload) => {
+    if (selectedTemplateId) {
+      formPayload.append('templateId', selectedTemplateId)
     }
 
-    staticCanvas.renderAll()
+    if (formData.certificateId.trim()) {
+      formPayload.append('certificateId', formData.certificateId.trim())
+    }
 
-    const dataUrl = staticCanvas.toDataURL({
-      format: 'png',
-      quality: 1,
-      multiplier: 2,
-    })
+    if (formData.expiryDate.trim()) {
+      formPayload.append('expiryDate', formData.expiryDate)
+    }
 
-    staticCanvas.dispose()
+    if (formData.grade.trim()) {
+      formPayload.append('grade', formData.grade)
+    }
 
-    return dataUrl
+    if (formData.description.trim()) {
+      formPayload.append('description', formData.description)
+    }
+  }
+
+  const appendAssetFiles = (formPayload) => {
+    if (assetFilesByRole.logo) {
+      formPayload.append('logo', assetFilesByRole.logo)
+    }
+
+    if (assetFilesByRole.signature) {
+      formPayload.append('signature', assetFilesByRole.signature)
+    }
+
+    if (assetFilesByRole.seal) {
+      formPayload.append('seal', assetFilesByRole.seal)
+    }
+
+    if (assetFilesByRole.watermark) {
+      formPayload.append('watermark', assetFilesByRole.watermark)
+    }
+
+    if (assetFilesByRole.backgroundImage) {
+      formPayload.append('backgroundImage', assetFilesByRole.backgroundImage)
+    }
+  }
+
+  const buildCertificateFormPayload = (templateJson, generatedFile) => {
+    const formPayload = new FormData()
+    formPayload.append('candidateName', formData.candidateName)
+    formPayload.append('certificateTitle', formData.certificateTitle)
+    formPayload.append('courseName', formData.courseName)
+    formPayload.append('issueDate', formData.issueDate)
+    formPayload.append('issuerName', formData.issuerName)
+    formPayload.append('templateName', formData.templateName)
+    formPayload.append('templateJson', JSON.stringify(templateJson))
+    formPayload.append('generatedImage', generatedFile)
+
+    appendOptionalCertificateFields(formPayload)
+    appendAssetFiles(formPayload)
+
+    return formPayload
   }
 
   const generateCertificate = async () => {
-    const requiredFields = ['candidateName', 'courseName', 'issueDate', 'issuerName']
-    const missingField = requiredFields.find((key) => !String(formData[key] || '').trim())
-
-    if (missingField) {
-      pushToast('error', 'Please complete candidate name, course, issue date, and issuer name.')
+    const missingFields = REQUIRED_FIELD_KEYS.filter((key) => !String(formData[key] || '').trim())
+    if (missingFields.length > 0) {
+      const missingLabels = missingFields.map((key) => REQUIRED_FIELD_LABELS[key] || key).join(', ')
+      pushToast('error', `Please complete required fields: ${missingLabels}.`)
       return
     }
 
-    updateLoading('generate', true)
-    setCreatedCertificate(null)
+    const requestVersion = beginRequest('generate')
+    if (isMountedRef.current) {
+      updateLoading('generate', true)
+      setCreatedCertificate(null)
+    }
 
     try {
+      const templateJson = getCanvasTemplateJson()
       const generatedDataUrl = await renderResolvedCanvasImage()
       const generatedBlob = await fetch(generatedDataUrl).then((response) => response.blob())
       const generatedFile = new File([generatedBlob], `certificate_${Date.now()}.png`, {
         type: 'image/png',
       })
-
-      const formPayload = new FormData()
-      formPayload.append('candidateName', formData.candidateName)
-      formPayload.append('certificateTitle', formData.certificateTitle)
-      formPayload.append('courseName', formData.courseName)
-      formPayload.append('issueDate', formData.issueDate)
-      formPayload.append('issuerName', formData.issuerName)
-      formPayload.append('templateName', formData.templateName)
-      formPayload.append('templateJson', JSON.stringify(canvasRef.current.toJSON(CANVAS_CUSTOM_PROPS)))
-      formPayload.append('generatedImage', generatedFile)
-
-      if (selectedTemplateId) {
-        formPayload.append('templateId', selectedTemplateId)
-      }
-
-      if (formData.certificateId.trim()) {
-        formPayload.append('certificateId', formData.certificateId.trim())
-      }
-
-      if (formData.expiryDate.trim()) {
-        formPayload.append('expiryDate', formData.expiryDate)
-      }
-
-      if (formData.grade.trim()) {
-        formPayload.append('grade', formData.grade)
-      }
-
-      if (formData.description.trim()) {
-        formPayload.append('description', formData.description)
-      }
-
-      if (assetFilesByRole.logo) {
-        formPayload.append('logo', assetFilesByRole.logo)
-      }
-
-      if (assetFilesByRole.signature) {
-        formPayload.append('signature', assetFilesByRole.signature)
-      }
-
-      if (assetFilesByRole.seal) {
-        formPayload.append('seal', assetFilesByRole.seal)
-      }
-
-      if (assetFilesByRole.watermark) {
-        formPayload.append('watermark', assetFilesByRole.watermark)
-      }
-
-      if (assetFilesByRole.backgroundImage) {
-        formPayload.append('backgroundImage', assetFilesByRole.backgroundImage)
-      }
+      const formPayload = buildCertificateFormPayload(templateJson, generatedFile)
 
       const response = await api.post('/certificates/create', formPayload, {
         headers: {
@@ -1155,12 +1319,22 @@ const CreateCertificatePage = () => {
         },
       })
 
+      if (!isMountedRef.current || !isLatestRequest('generate', requestVersion)) {
+        return
+      }
+
       setCreatedCertificate(response.data.certificate)
       pushToast('success', 'Certificate generated and uploaded successfully.')
     } catch (error) {
+      if (isAbortLikeError(error) || !isMountedRef.current || !isLatestRequest('generate', requestVersion)) {
+        return
+      }
+
       pushToast('error', error.response?.data?.message || 'Certificate generation failed.')
     } finally {
-      updateLoading('generate', false)
+      if (isMountedRef.current && isLatestRequest('generate', requestVersion)) {
+        updateLoading('generate', false)
+      }
     }
   }
 
@@ -1177,6 +1351,9 @@ const CreateCertificatePage = () => {
 
   useEffect(() => {
     let disposed = false
+    isMountedRef.current = true
+
+    setCanvasStatus('initializing')
 
     const initCanvas = async () => {
       try {
@@ -1221,9 +1398,15 @@ const CreateCertificatePage = () => {
         canvas.on('object:moving', onObjectMoving)
 
         seedStarterCanvas(canvas, fabricLib)
+        setCanvasStatus('ready')
         syncSelectedState()
         refreshTemplates()
-      } catch {
+      } catch (error) {
+        if (isAbortLikeError(error) || disposed || !isMountedRef.current) {
+          return
+        }
+
+        setCanvasStatus('error')
         pushToast('error', 'Failed to initialize certificate builder canvas.')
       }
     }
@@ -1253,23 +1436,31 @@ const CreateCertificatePage = () => {
 
     return () => {
       disposed = true
+      isMountedRef.current = false
       globalThis.removeEventListener('keydown', onKeyDown)
 
-      toastTimeoutsRef.current.forEach((timer) => clearTimeout(timer))
+      if (qrAbortControllerRef.current) {
+        qrAbortControllerRef.current.abort()
+        qrAbortControllerRef.current = null
+      }
+
+      toastTimeoutsRef.current.forEach((entry) => clearTimeout(entry.timer))
       toastTimeoutsRef.current = []
 
       if (canvasRef.current) {
         canvasRef.current.dispose()
         canvasRef.current = null
       }
+
+      fabricRef.current = null
     }
     // This effect intentionally runs once to bootstrap Fabric and keyboard handlers.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const isGenerateDisabled = useMemo(
-    () => loading.generate || loading.loadTemplate || loading.saveTemplate,
-    [loading.generate, loading.loadTemplate, loading.saveTemplate],
+    () => loading.generate || loading.loadTemplate || loading.saveTemplate || canvasStatus !== 'ready',
+    [canvasStatus, loading.generate, loading.loadTemplate, loading.saveTemplate],
   )
 
   return (
@@ -1284,7 +1475,7 @@ const CreateCertificatePage = () => {
           <button
             type="button"
             onClick={saveTemplate}
-            disabled={loading.saveTemplate}
+            disabled={loading.saveTemplate || canvasStatus !== 'ready'}
             className="inline-flex items-center gap-2 rounded-xl border border-brand-300 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <FaSave />
@@ -1326,9 +1517,10 @@ const CreateCertificatePage = () => {
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">Candidate Name</span>
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">Candidate Name *</span>
             <input
               type="text"
+              required
               value={formData.candidateName}
               onChange={(event) => setFormData((previous) => ({ ...previous, candidateName: event.target.value }))}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-brand-600"
@@ -1336,9 +1528,10 @@ const CreateCertificatePage = () => {
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">Course</span>
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">Course *</span>
             <input
               type="text"
+              required
               value={formData.courseName}
               onChange={(event) => setFormData((previous) => ({ ...previous, courseName: event.target.value }))}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-brand-600"
@@ -1346,9 +1539,10 @@ const CreateCertificatePage = () => {
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">Issue Date</span>
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">Issue Date *</span>
             <input
               type="date"
+              required
               value={formData.issueDate}
               onChange={(event) => setFormData((previous) => ({ ...previous, issueDate: event.target.value }))}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-brand-600"
@@ -1377,9 +1571,10 @@ const CreateCertificatePage = () => {
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">Issuer Name</span>
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">Issuer Name *</span>
             <input
               type="text"
+              required
               value={formData.issuerName}
               onChange={(event) => setFormData((previous) => ({ ...previous, issuerName: event.target.value }))}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-brand-600"
@@ -1408,6 +1603,8 @@ const CreateCertificatePage = () => {
           </label>
         </div>
 
+        <p className="mt-3 text-xs font-semibold text-slate-500">Fields marked * are required to generate a certificate.</p>
+
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <select
             value={selectedTemplateId}
@@ -1425,7 +1622,7 @@ const CreateCertificatePage = () => {
           <button
             type="button"
             onClick={loadTemplate}
-            disabled={!selectedTemplateId || loading.loadTemplate}
+            disabled={!selectedTemplateId || loading.loadTemplate || canvasStatus !== 'ready'}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading.loadTemplate ? 'Loading template...' : 'Load Template'}
@@ -1443,12 +1640,27 @@ const CreateCertificatePage = () => {
           <button
             type="button"
             onClick={resetCanvas}
+            disabled={canvasStatus !== 'ready'}
             className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100"
           >
             Reset Starter Layout
           </button>
         </div>
       </section>
+
+      {canvasStatus !== 'ready' && (
+        <section
+          className={`rounded-xl border px-4 py-3 text-sm font-semibold ${
+            canvasStatus === 'error'
+              ? 'border-rose-300 bg-rose-50 text-rose-700'
+              : 'border-amber-300 bg-amber-50 text-amber-700'
+          }`}
+        >
+          {canvasStatus === 'error'
+            ? 'Canvas failed to initialize. Refresh the page to retry.'
+            : 'Canvas is initializing. Editing tools will unlock in a moment.'}
+        </section>
+      )}
 
       <section className="grid gap-4 2xl:grid-cols-[18rem,minmax(0,1fr),19rem]">
         <aside className="glass-panel rounded-2xl p-4">
