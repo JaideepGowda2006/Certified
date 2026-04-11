@@ -173,6 +173,32 @@ const tryEmbedImage = async (pdfDoc, imageBuffer) => {
   }
 };
 
+const tryEmbedImageByMime = async (pdfDoc, imageBuffer, mimeType = '') => {
+  if (!imageBuffer) {
+    return null;
+  }
+
+  const normalizedMime = String(mimeType || '').toLowerCase();
+
+  if (normalizedMime.includes('png')) {
+    try {
+      return await pdfDoc.embedPng(imageBuffer);
+    } catch {
+      return tryEmbedImage(pdfDoc, imageBuffer);
+    }
+  }
+
+  if (normalizedMime.includes('jpg') || normalizedMime.includes('jpeg')) {
+    try {
+      return await pdfDoc.embedJpg(imageBuffer);
+    } catch {
+      return tryEmbedImage(pdfDoc, imageBuffer);
+    }
+  }
+
+  return tryEmbedImage(pdfDoc, imageBuffer);
+};
+
 const drawFrame = (page) => {
   const outer = 20;
   const inner = 30;
@@ -668,6 +694,8 @@ const generateCertificatePdfBuffer = async ({
   logoBuffer = null,
   signatureBuffer = null,
   qrBuffer = null,
+  canvasImageBuffer = null,
+  canvasImageMimeType = '',
   verificationUrl,
 }) => {
   const pdfDoc = await PDFDocument.create();
@@ -686,6 +714,61 @@ const generateCertificatePdfBuffer = async ({
     sans: await pdfDoc.embedFont(StandardFonts.Helvetica),
     boldSans: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
   };
+
+  if (canvasImageBuffer) {
+    const canvasImage = await tryEmbedImageByMime(pdfDoc, canvasImageBuffer, canvasImageMimeType);
+
+    if (canvasImage) {
+      page.drawRectangle({
+        x: 0,
+        y: 0,
+        width: PAGE_WIDTH,
+        height: PAGE_HEIGHT,
+        color: COLORS.white,
+      });
+
+      drawImageFit({
+        page,
+        image: canvasImage,
+        x: 0,
+        y: 0,
+        maxWidth: PAGE_WIDTH,
+        maxHeight: PAGE_HEIGHT,
+      });
+
+      const verificationLine = `Verify: ${getDisplayVerificationLink(verificationUrl, certificate.certificateId)}`;
+      const metaLine = `ID: ${certificate.certificateId} | Issuer: ${certificate.issuerName}`;
+
+      page.drawRectangle({
+        x: 0,
+        y: 0,
+        width: PAGE_WIDTH,
+        height: 22,
+        color: COLORS.navy,
+        opacity: 0.9,
+      });
+
+      page.drawText(verificationLine, {
+        x: 18,
+        y: 8,
+        size: 8,
+        font: fonts.sans,
+        color: COLORS.white,
+      });
+
+      const metaWidth = fonts.sans.widthOfTextAtSize(metaLine, 8);
+      page.drawText(metaLine, {
+        x: Math.max(18, PAGE_WIDTH - metaWidth - 18),
+        y: 8,
+        size: 8,
+        font: fonts.sans,
+        color: COLORS.white,
+      });
+
+      const pdfBytesFromCanvas = await pdfDoc.save({ useObjectStreams: false });
+      return Buffer.from(pdfBytesFromCanvas);
+    }
+  }
 
   const [logoImage, signatureImage, qrImage] = await Promise.all([
     tryEmbedImage(pdfDoc, logoBuffer),

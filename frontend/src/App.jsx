@@ -4,7 +4,7 @@ import AppShell from './components/AppShell.jsx'
 import LandingPage from './pages/LandingPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
-import CreateCertificatePage from './pages/CreateCertificatePage.jsx'
+import CreateCertificateStudioPage from './pages/CreateCertificateStudioPage.jsx'
 import CertificatesPage from './pages/CertificatesPage.jsx'
 import VerifyPage from './pages/VerifyPage.jsx'
 import AnalyticsPage from './pages/AnalyticsPage.jsx'
@@ -32,9 +32,15 @@ function App() {
         path="/create-certificate"
         element={
           <ProtectedRoute>
-            <AppShell>
-              <CreateCertificatePage />
-            </AppShell>
+            <CreateCertificateStudioPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/create-certificate/editor"
+        element={
+          <ProtectedRoute>
+            <CreateCertificateStudioPage />
           </ProtectedRoute>
         }
       />

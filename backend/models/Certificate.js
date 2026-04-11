@@ -84,6 +84,29 @@ const certificateSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    templateRef: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CertificateTemplate',
+      default: null,
+    },
+    templateName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    renderSource: {
+      type: String,
+      enum: ['premium', 'canvas'],
+      default: 'premium',
+    },
+    previewImageUrl: {
+      type: String,
+      default: '',
+    },
+    assetUrls: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
