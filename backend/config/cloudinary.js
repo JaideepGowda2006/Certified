@@ -1,6 +1,11 @@
 const { v2: cloudinary } = require('cloudinary');
 
 const configureCloudinary = () => {
+  if (process.env.DEMO_MODE === 'true') {
+    console.warn('DEMO_MODE is enabled. Cloudinary uploads are replaced with local data URLs.');
+    return;
+  }
+
   const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } = process.env;
   const hasCloudName = Boolean(CLOUDINARY_CLOUD_NAME);
   const hasApiKey = Boolean(CLOUDINARY_API_KEY);

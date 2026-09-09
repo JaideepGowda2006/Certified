@@ -1,6 +1,6 @@
 const { v2: cloudinary } = require('cloudinary');
 
-const isDemoMode = () => process.env.NODE_ENV !== 'production' && process.env.DEMO_MODE !== 'false';
+const isDemoMode = () => process.env.DEMO_MODE === 'true';
 
 const getDemoDataUrl = (buffer, options) => {
   const mimeType = options.resource_type === 'raw'

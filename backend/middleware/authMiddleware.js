@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-const isDemoMode = () => process.env.NODE_ENV !== 'production' && process.env.DEMO_MODE !== 'false';
+const isDemoMode = () => process.env.DEMO_MODE === 'true';
 
 const getDemoUser = async () => {
   const email = 'demo-issuer@truecert.local';

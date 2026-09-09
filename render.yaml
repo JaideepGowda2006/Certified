@@ -23,3 +23,5 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
+      - key: DEMO_MODE
+        value: "true"
