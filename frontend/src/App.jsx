@@ -13,8 +13,10 @@ import ProtectedPdfViewerPage from './pages/ProtectedPdfViewerPage.jsx'
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/landing" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/verify" element={<VerifyPage />} />
       <Route path="/verify/:id" element={<VerifyPage />} />
       <Route path="/verify/:id/pdf" element={<ProtectedPdfViewerPage />} />
 

@@ -81,7 +81,7 @@ const LandingPage = () => {
     <div className="min-h-screen">
       <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-6 md:px-6">
         <div>
-          <p className="text-xs uppercase tracking-[0.28em] text-brand-700">TrueCert</p>
+          <p className="text-xs uppercase tracking-[0.28em] text-brand-700">Certified</p>
           <h1 className="text-2xl font-bold text-slate-900">Trust Every Credential</h1>
         </div>
 
@@ -120,7 +120,7 @@ const LandingPage = () => {
                 Issue, secure, and verify certificates with confidence.
               </h2>
               <p className="mt-5 max-w-2xl text-base leading-relaxed text-slate-600 md:text-lg">
-                TrueCert helps colleges, companies, and institutes issue QR-based digital credentials with
+                Certified helps colleges, companies, and institutes issue QR-based digital credentials with
                 tamper detection, revocation controls, and public verification workflows.
               </p>
 
@@ -252,7 +252,7 @@ const LandingPage = () => {
       </main>
 
       <footer className="border-t border-slate-200/70 px-4 py-6 text-center text-sm text-slate-500">
-        <p>TrueCert. Secure credential management and public verification for modern institutions.</p>
+        <p>Certified. Secure credential management and public verification for modern institutions.</p>
       </footer>
     </div>
   )

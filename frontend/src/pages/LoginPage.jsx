@@ -58,7 +58,7 @@ const LoginPage = () => {
     <div className="flex min-h-screen items-center justify-center px-4 py-8">
       <div className="glass-panel w-full max-w-lg rounded-3xl p-6 md:p-8">
         <div className="mb-6">
-          <p className="text-xs uppercase tracking-[0.26em] text-brand-700">TrueCert</p>
+          <p className="text-xs uppercase tracking-[0.26em] text-brand-700">Certified</p>
           <h1 className="mt-2 text-3xl font-bold text-slate-900">{mode === 'login' ? 'Admin Login' : 'Create Issuer Account'}</h1>
           <p className="mt-2 text-sm text-slate-600">
             {mode === 'login'

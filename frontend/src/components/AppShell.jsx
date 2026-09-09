@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { FaChartLine, FaFileSignature, FaHome, FaListUl, FaSignOutAlt } from 'react-icons/fa'
+import { FaChartLine, FaFileSignature, FaHome, FaListUl, FaQrcode, FaSignOutAlt } from 'react-icons/fa'
 import PropTypes from 'prop-types'
 import { useAuth } from '../context/AuthContext'
 
@@ -24,6 +24,11 @@ const navItems = [
     label: 'Analytics',
     icon: FaChartLine,
   },
+  {
+    to: '/verify',
+    label: 'Verify Certificate',
+    icon: FaQrcode,
+  },
 ]
 
 const baseNavClass =
@@ -43,7 +48,7 @@ const AppShell = ({ children }) => {
       <header className="glass-panel sticky top-0 z-30 border-b border-slate-200/60 bg-gradient-to-r from-brand-50/70 to-white px-4 py-4 md:hidden">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-wider text-slate-500">TrueCert</p>
+            <p className="text-xs uppercase tracking-wider text-slate-500">Certified</p>
             <h1 className="text-xl font-bold text-slate-900">Issuer Console</h1>
           </div>
           <button
@@ -59,7 +64,7 @@ const AppShell = ({ children }) => {
       <div className="mx-auto flex w-full max-w-7xl gap-6 px-4 py-6 md:px-6">
         <aside className="glass-panel sticky top-6 hidden h-[calc(100vh-3rem)] w-72 rounded-3xl p-5 md:flex md:flex-col">
           <div className="mb-7">
-            <p className="text-xs uppercase tracking-wider text-brand-700">TrueCert</p>
+            <p className="text-xs uppercase tracking-wider text-brand-700">Certified</p>
             <h2 className="text-2xl font-bold text-slate-900">Issuer Console</h2>
             <p className="mt-2 text-sm text-slate-600">{user?.organization || 'Organization'}</p>
             <div className="mt-3 inline-flex rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-brand-700">

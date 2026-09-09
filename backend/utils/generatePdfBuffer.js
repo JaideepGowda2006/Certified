@@ -249,7 +249,7 @@ const drawFrame = (page) => {
   });
 };
 
-const drawPatternAndWatermark = ({ page, boldSerif, organization = 'TRUECERT' }) => {
+const drawPatternAndWatermark = ({ page, boldSerif, organization = 'CERTIFIED' }) => {
   for (let x = -PAGE_HEIGHT; x < PAGE_WIDTH + PAGE_HEIGHT; x += 24) {
     page.drawLine({
       start: { x, y: 0 },
@@ -263,7 +263,7 @@ const drawPatternAndWatermark = ({ page, boldSerif, organization = 'TRUECERT' })
   drawCenteredText({
     page,
     font: boldSerif,
-    text: 'TRUECERT VERIFIED',
+    text: 'CERTIFIED VERIFIED',
     fontSize: 64,
     y: 250,
     color: COLORS.navy,
@@ -274,7 +274,7 @@ const drawPatternAndWatermark = ({ page, boldSerif, organization = 'TRUECERT' })
   drawCenteredText({
     page,
     font: boldSerif,
-    text: String(organization || 'TRUECERT').toUpperCase(),
+    text: String(organization || 'CERTIFIED').toUpperCase(),
     fontSize: 50,
     y: 208,
     color: COLORS.gold,
@@ -572,7 +572,7 @@ const drawHeaderAndBody = ({
   drawCenteredText({
     page,
     font: boldSans,
-    text: 'TRUECERT',
+    text: 'CERTIFIED',
     fontSize: 10,
     y: 110,
     color: COLORS.navy,
@@ -596,8 +596,8 @@ const drawHeaderAndBody = ({
     color: COLORS.emerald,
   });
 
-  page.drawText('Digitally Verified by TrueCert', {
-    x: centerX + (columnWidth - sans.widthOfTextAtSize('Digitally Verified by TrueCert', 9)) / 2,
+  page.drawText('Digitally Verified by Certified', {
+    x: centerX + (columnWidth - sans.widthOfTextAtSize('Digitally Verified by Certified', 9)) / 2,
     y: 56,
     size: 9,
     font: sans,
@@ -700,9 +700,9 @@ const generateCertificatePdfBuffer = async ({
 }) => {
   const pdfDoc = await PDFDocument.create();
   pdfDoc.setTitle(`Certificate ${certificate.certificateId}`);
-  pdfDoc.setAuthor(String(certificate.organization || 'TrueCert'));
-  pdfDoc.setCreator('TrueCert Certificate Engine (pdf-lib)');
-  pdfDoc.setProducer('TrueCert');
+  pdfDoc.setAuthor(String(certificate.organization || 'Certified'));
+  pdfDoc.setCreator('Certified Certificate Engine (pdf-lib)');
+  pdfDoc.setProducer('Certified');
   pdfDoc.setSubject('Digitally verified certificate');
   pdfDoc.setKeywords(['certificate', 'verification', 'truecert', 'pdf-lib']);
 

@@ -62,7 +62,7 @@ app.use(sanitizeRequest);
 app.get('/health', (req, res) => {
   res.json({
     success: true,
-    message: 'TrueCert backend is healthy.',
+    message: 'Certified backend is healthy.',
     environment: process.env.NODE_ENV || 'development',
   });
 });
@@ -106,7 +106,7 @@ const startServer = async () => {
   configureCloudinary();
 
   app.listen(port, () => {
-    console.log(`TrueCert backend listening on port ${port}`);
+    console.log(`Certified backend listening on port ${port}`);
   });
 };
 

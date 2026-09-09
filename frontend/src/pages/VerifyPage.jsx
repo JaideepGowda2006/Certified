@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FaDownload, FaEye, FaLock, FaQrcode, FaShieldAlt } from 'react-icons/fa'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   LinkedinIcon,
   LinkedinShareButton,
@@ -28,9 +28,11 @@ const getOrCreateSessionId = () => {
 
 const VerifyPage = () => {
   const { id } = useParams()
-  const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(Boolean(id))
   const [error, setError] = useState('')
   const [payload, setPayload] = useState(null)
+  const [lookupId, setLookupId] = useState(id || '')
   const [revealed, setRevealed] = useState(false)
   const [sessionId, setSessionId] = useState('')
   const [isSecurityLocked, setIsSecurityLocked] = useState(false)
@@ -42,13 +44,19 @@ const VerifyPage = () => {
   }, [])
 
   useEffect(() => {
+    setLookupId(id || '')
+  }, [id])
+
+  useEffect(() => {
     const loadCertificate = async () => {
-      if (!sessionId) {
+      if (!id || !sessionId) {
+        setLoading(false)
         return
       }
 
       setLoading(true)
       setError('')
+      setPayload(null)
 
       try {
         const response = await api.get(`/verify/${id}`, {
@@ -109,10 +117,64 @@ const VerifyPage = () => {
 
   const watermarkText = useMemo(() => {
     const timestamp = formatDateTime(new Date())
-    return `Verified via TrueCert | ${timestamp} | Session ${sessionId}`
+    return `Verified via Certified | ${timestamp} | Session ${sessionId}`
   }, [sessionId])
 
   const shareUrl = globalThis.location?.href || ''
+
+  const handleLookupSubmit = (event) => {
+    event.preventDefault()
+    const normalizedId = lookupId.trim()
+
+    if (!normalizedId) {
+      setError('Enter a certificate ID to verify.')
+      return
+    }
+
+    navigate(`/verify/${encodeURIComponent(normalizedId)}`)
+  }
+
+  const lookupForm = (
+    <form onSubmit={handleLookupSubmit} className="flex flex-col gap-3 sm:flex-row">
+      <label htmlFor="certificate-id" className="sr-only">
+        Certificate ID
+      </label>
+      <input
+        id="certificate-id"
+        value={lookupId}
+        onChange={(event) => setLookupId(event.target.value)}
+        placeholder="Enter certificate ID, e.g. TCX82LM92PQ"
+        className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-brand-600"
+      />
+      <button
+        type="submit"
+        className="rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+      >
+        Verify Certificate
+      </button>
+    </form>
+  )
+
+  if (!id) {
+    return (
+      <div className="min-h-screen px-4 py-10">
+        <div className="mx-auto max-w-3xl space-y-5">
+          <header className="glass-panel rounded-3xl border border-slate-200/70 p-6">
+            <p className="text-xs uppercase tracking-[0.25em] text-brand-700">Public Verification</p>
+            <h1 className="mt-1 text-3xl font-bold text-slate-900">Verify a Certificate</h1>
+            <p className="mt-2 text-sm text-slate-600">Enter a certificate ID to check its authenticity and status.</p>
+          </header>
+          <section className="glass-panel rounded-3xl border border-slate-200/70 p-6">
+            {lookupForm}
+            {error && <p className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>}
+          </section>
+          <Link to="/dashboard" className="inline-flex text-sm font-semibold text-brand-700 hover:text-brand-800">
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   if (loading) {
     return <LoadingSpinner label="Validating certificate..." />
@@ -120,10 +182,18 @@ const VerifyPage = () => {
 
   if (error) {
     return (
-      <div className="mx-auto mt-10 max-w-4xl px-4">
-        <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>
+      <div className="mx-auto mt-10 max-w-4xl space-y-4 px-4">
+        <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">Certificate Not Found / Invalid Certificate: {error}</p>
+        {lookupForm}
+        <Link to="/dashboard" className="inline-flex text-sm font-semibold text-brand-700 hover:text-brand-800">
+          Back to Dashboard
+        </Link>
       </div>
     )
+  }
+
+  if (!payload?.certificate || !payload?.verification) {
+    return <LoadingSpinner label="Validating certificate..." />
   }
 
   const certificate = payload?.certificate
@@ -199,7 +269,7 @@ const VerifyPage = () => {
               to="/"
               className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
             >
-              Back to TrueCert
+              Back to Certified
             </Link>
           </div>
         </header>
@@ -216,7 +286,7 @@ const VerifyPage = () => {
                   <FaLock /> Security lock is active for this session.
                 </p>
                 <p className="mt-2 text-sm text-amber-800">
-                  TrueCert automatically locks sensitive data when the tab loses focus or print is invoked.
+                  Certified automatically locks sensitive data when the tab loses focus or print is invoked.
                 </p>
                 <button
                   type="button"
@@ -360,13 +430,13 @@ const VerifyPage = () => {
             <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 md:p-5">
               <p className="text-sm font-semibold text-slate-700">Share Verification</p>
               <div className="mt-3 flex items-center gap-2">
-                <LinkedinShareButton url={shareUrl} title="Verified certificate on TrueCert">
+                <LinkedinShareButton url={shareUrl} title="Verified certificate on Certified">
                   <LinkedinIcon size={36} round />
                 </LinkedinShareButton>
-                <XShareButton url={shareUrl} title="Verified certificate on TrueCert">
+                <XShareButton url={shareUrl} title="Verified certificate on Certified">
                   <XIcon size={36} round />
                 </XShareButton>
-                <WhatsappShareButton url={shareUrl} title="Verified certificate on TrueCert">
+                <WhatsappShareButton url={shareUrl} title="Verified certificate on Certified">
                   <WhatsappIcon size={36} round />
                 </WhatsappShareButton>
               </div>

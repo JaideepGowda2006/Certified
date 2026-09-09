@@ -6,6 +6,12 @@ import LoadingSpinner from './LoadingSpinner'
 const ProtectedRoute = ({ children }) => {
   const location = useLocation()
   const { isAuthenticated, loading } = useAuth()
+  const isDemoMode =
+    (import.meta.env.DEV && import.meta.env.VITE_DEMO_MODE !== 'false') || import.meta.env.VITE_DEMO_MODE === 'true'
+
+  if (isDemoMode) {
+    return children
+  }
 
   if (loading) {
     return <LoadingSpinner label="Checking session..." />

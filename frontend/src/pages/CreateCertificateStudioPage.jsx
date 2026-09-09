@@ -8,7 +8,7 @@ const CreateCertificateStudioPage = () => {
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-[1850px] flex-wrap items-center justify-between gap-3 px-3 py-3 md:px-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-brand-700">TrueCert</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-brand-700">Certified</p>
             <h1 className="text-xl font-bold text-slate-900 md:text-2xl">Certificate Studio Workspace</h1>
           </div>
 

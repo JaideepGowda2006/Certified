@@ -1,6 +1,6 @@
-# TrueCert
+# Certified
 
-TrueCert is a production-ready full-stack SaaS application for secure digital certificate issuance and public verification.
+Certified is a production-ready full-stack SaaS application for secure digital certificate issuance and public verification.
 
 ## Core Capabilities
 
@@ -48,7 +48,10 @@ CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 FRONTEND_URL=http://localhost:5173
 PDF_ACCESS_TOKEN_TTL_MINUTES=10
+DEMO_MODE=true
 ```
+
+For local demonstrations, `DEMO_MODE=true` bypasses the issuer login barrier and uses a MongoDB-backed demo issuer. QR and PDF assets are stored as generated data URLs instead of being uploaded to Cloudinary. Keep `DEMO_MODE=false` or omit it in production.
 
 ### Frontend (.env)
 
@@ -56,6 +59,7 @@ Use [frontend/.env.example](frontend/.env.example).
 
 ```env
 VITE_API_BASE_URL=http://localhost:5000/api
+VITE_DEMO_MODE=true
 ```
 
 ## Local Development

@@ -305,7 +305,7 @@ const ProtectedPdfViewerPage = () => {
                   <FaLock /> Viewer locked for security.
                 </p>
                 <p className="mt-2 text-sm text-slate-600">
-                  TrueCert locks this screen when the tab loses focus or print is triggered.
+                  Certified locks this screen when the tab loses focus or print is triggered.
                 </p>
                 <button
                   type="button"
@@ -328,7 +328,7 @@ const ProtectedPdfViewerPage = () => {
             </div>
 
             {viewerUrl ? (
-              <iframe title="TrueCert Protected PDF" src={viewerUrl} className="h-[79vh] w-full rounded-2xl bg-white" />
+                  <iframe title="Certified Protected PDF" src={viewerUrl} className="h-[79vh] w-full rounded-2xl bg-white" />
             ) : (
               <div className="flex h-[79vh] items-center justify-center rounded-2xl bg-slate-50 text-sm font-semibold text-slate-500">
                 Protected PDF is unavailable. Use Refresh PDF and try again.
