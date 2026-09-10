@@ -150,20 +150,42 @@ const cloneFabricObject = (object) =>
 const loadFabricImageFromUrl = async (fabricLib, url) => {
   if (fabricLib?.Image?.fromURL) {
     return new Promise((resolve, reject) => {
-      fabricLib.Image.fromURL(
-        url,
-        (image) => {
-          if (!image) {
-            reject(new Error('Fabric image instance was not created.'))
-            return
-          }
+      let settled = false
+      const resolveImage = (image) => {
+        if (settled) {
+          return
+        }
 
-          resolve(image)
-        },
-        {
-          crossOrigin: 'anonymous',
-        },
-      )
+        if (!image) {
+          settled = true
+          reject(new Error('Fabric image instance was not created.'))
+          return
+        }
+
+        settled = true
+        resolve(image)
+      }
+
+      try {
+        const result = fabricLib.Image.fromURL(
+          url,
+          resolveImage,
+          {
+            crossOrigin: 'anonymous',
+          },
+        )
+
+        if (result?.then) {
+          result.then(resolveImage).catch((error) => {
+            if (!settled) {
+              settled = true
+              reject(error)
+            }
+          })
+        }
+      } catch (error) {
+        reject(error)
+      }
     })
   }
 
@@ -798,7 +820,7 @@ const CreateCertificatePage = () => {
             opacity: 0.28,
           })
           canvas.add(image)
-          image.moveTo(0)
+          canvas.sendObjectToBack(image)
         } else {
           if (role === 'watermark') {
             image.set({
@@ -925,19 +947,19 @@ const CreateCertificatePage = () => {
       }
 
       if (direction === 'front') {
-        canvas.bringToFront(object)
+        canvas.bringObjectToFront(object)
       }
 
       if (direction === 'forward') {
-        canvas.bringForward(object)
+        canvas.bringObjectForward(object)
       }
 
       if (direction === 'backward') {
-        canvas.sendBackwards(object)
+        canvas.sendObjectBackwards(object)
       }
 
       if (direction === 'back') {
-        canvas.sendToBack(object)
+        canvas.sendObjectToBack(object)
       }
 
       canvas.requestRenderAll()
