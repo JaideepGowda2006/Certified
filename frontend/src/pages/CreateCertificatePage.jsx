@@ -261,6 +261,26 @@ const buildSelectionState = (object) => ({
   hasShadow: Boolean(object?.shadow),
 })
 
+const getLayerLabel = (object, index) => {
+  if (object?.assetRole) {
+    return object.assetRole.replaceAll(/([A-Z])/g, ' $1')
+  }
+
+  if (isTextObject(object) && object.text) {
+    return String(object.text).replaceAll(/\s+/g, ' ').trim().slice(0, 28)
+  }
+
+  if (object?.truecertType === 'qr-placeholder') {
+    return 'QR code placeholder'
+  }
+
+  if (object?.truecertType === 'border') {
+    return 'Border'
+  }
+
+  return object?.type ? `${object.type} ${index + 1}` : `Layer ${index + 1}`
+}
+
 const getDefaultPlacement = () => ({
   left: A4_WIDTH / 2,
   top: A4_HEIGHT / 2,
@@ -469,6 +489,7 @@ const CreateCertificatePage = () => {
     backgroundImage: null,
   })
   const [selectedState, setSelectedState] = useState(null)
+  const [canvasObjects, setCanvasObjects] = useState([])
   const [snapToGrid, setSnapToGrid] = useState(true)
   const [toasts, setToasts] = useState([])
   const [canvasStatus, setCanvasStatus] = useState('initializing')
@@ -545,8 +566,11 @@ const CreateCertificatePage = () => {
     const canvas = canvasRef.current
     if (!canvas) {
       setSelectedState(null)
+      setCanvasObjects([])
       return
     }
+
+    setCanvasObjects(canvas.getObjects())
 
     const activeObject = canvas.getActiveObject()
     if (!activeObject) {
@@ -1862,6 +1886,45 @@ const CreateCertificatePage = () => {
         </div>
 
         <aside className="glass-panel rounded-2xl p-4">
+          <div className="mb-5 border-b border-slate-200 pb-4">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Layers</h2>
+              <span className="text-xs font-semibold text-slate-400">{canvasObjects.length}</span>
+            </div>
+            <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+              {canvasObjects.length > 0 ? (
+                [...canvasObjects].reverse().map((object, reverseIndex) => {
+                  const objectIndex = canvasObjects.length - reverseIndex - 1
+                  const isSelected = object === canvasRef.current?.getActiveObject()
+
+                  return (
+                    <button
+                      key={`${objectIndex}-${object.assetKey || object.type}`}
+                      type="button"
+                      onClick={() =>
+                        withCanvas((canvas) => {
+                          canvas.setActiveObject(object)
+                          canvas.requestRenderAll()
+                          syncSelectedState()
+                        })
+                      }
+                      className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-xs font-semibold transition ${
+                        isSelected
+                          ? 'bg-brand-100 text-brand-800 ring-1 ring-brand-300'
+                          : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span className="truncate">{getLayerLabel(object, objectIndex)}</span>
+                      <span className="shrink-0 text-[10px] uppercase text-slate-400">{object.type}</span>
+                    </button>
+                  )
+                })
+              ) : (
+                <p className="rounded-md bg-slate-50 px-2.5 py-2 text-xs text-slate-500">No layers yet.</p>
+              )}
+            </div>
+          </div>
+
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Properties</h2>
             <button
