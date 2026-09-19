@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const crypto = require('node:crypto');
+const http = require('node:http');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -9,6 +10,7 @@ const rateLimit = require('express-rate-limit');
 
 const connectDB = require('./config/db');
 const configureCloudinary = require('./config/cloudinary');
+const { initSocket } = require('./utils/socket');
 const authRoutes = require('./routes/authRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
 const verifyRoutes = require('./routes/verifyRoutes');
@@ -99,14 +101,22 @@ const ensureJwtSecret = () => {
   );
 };
 
+const createServerInstance = () => {
+  const server = http.createServer(app);
+  initSocket(server, corsOrigins);
+  return server;
+};
+
 const startServer = async () => {
   ensureJwtSecret();
 
   await connectDB();
   configureCloudinary();
 
-  return app.listen(port, () => {
-    console.log(`Certified backend listening on port ${port}`);
+  const server = createServerInstance();
+
+  return server.listen(port, () => {
+    console.log(`Certified backend with Socket.IO listening on port ${port}`);
   });
 };
 
@@ -117,4 +127,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { app, startServer, ensureJwtSecret };
+module.exports = { app, createServerInstance, startServer, ensureJwtSecret };

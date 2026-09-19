@@ -5,9 +5,11 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import StatusBadge from '../components/StatusBadge'
 import { formatDate } from '../utils/date'
 import { useAuth } from '../context/AuthContext'
+import { useSocket } from '../context/SocketContext'
 
 const CertificatesPage = () => {
-  const { isAdmin } = useAuth()
+  const { user, isAdmin } = useAuth()
+  const { socket } = useSocket()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
@@ -34,6 +36,68 @@ const CertificatesPage = () => {
   useEffect(() => {
     fetchCertificates()
   }, [])
+
+  useEffect(() => {
+    if (!socket) return
+
+    const handleCreated = (payload) => {
+      const cert = payload?.certificate || payload
+      if (!cert?.certificateId) return
+
+      // If viewing as student, only prepend if candidate email matches
+      if (!isAdmin && cert.candidateEmail && user?.email) {
+        if (cert.candidateEmail.toLowerCase() !== user.email.toLowerCase()) {
+          return
+        }
+      }
+
+      setCertificates((prev) => [cert, ...prev.filter((c) => c.certificateId !== cert.certificateId)])
+    }
+
+    const handleUpdated = (payload) => {
+      const cert = payload?.certificate || payload
+      if (!cert?.certificateId) return
+      setCertificates((prev) =>
+        prev.map((c) => (c.certificateId === cert.certificateId ? { ...c, ...cert } : c)),
+      )
+    }
+
+    const handleRevoked = (payload) => {
+      const cert = payload?.certificate || payload
+      const id = cert?.certificateId || payload?.certificateId
+      if (!id) return
+      setCertificates((prev) =>
+        prev.map((c) =>
+          c.certificateId === id
+            ? {
+                ...c,
+                status: 'revoked',
+                effectiveStatus: 'revoked',
+                revocationReason: cert?.revocationReason || 'Revoked via real-time update',
+              }
+            : c,
+        ),
+      )
+    }
+
+    const handleDeleted = (payload) => {
+      const id = payload?.certificateId
+      if (!id) return
+      setCertificates((prev) => prev.filter((c) => c.certificateId !== id))
+    }
+
+    socket.on('certificate:created', handleCreated)
+    socket.on('certificate:updated', handleUpdated)
+    socket.on('certificate:revoked', handleRevoked)
+    socket.on('certificate:deleted', handleDeleted)
+
+    return () => {
+      socket.off('certificate:created', handleCreated)
+      socket.off('certificate:updated', handleUpdated)
+      socket.off('certificate:revoked', handleRevoked)
+      socket.off('certificate:deleted', handleDeleted)
+    }
+  }, [socket, isAdmin, user])
 
   const onSearch = (event) => {
     event.preventDefault()

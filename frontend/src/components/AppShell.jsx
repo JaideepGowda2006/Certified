@@ -2,6 +2,8 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { FaChartLine, FaFileSignature, FaHome, FaListUl, FaQrcode, FaSignOutAlt } from 'react-icons/fa'
 import PropTypes from 'prop-types'
 import { useAuth } from '../context/AuthContext'
+import { useSocket } from '../context/SocketContext'
+import RealtimeToastContainer from './RealtimeToastContainer'
 
 const navItems = [
   {
@@ -37,6 +39,7 @@ const baseNavClass =
 const AppShell = ({ children }) => {
   const navigate = useNavigate()
   const { logout, user, isAdmin } = useAuth()
+  const { isConnected } = useSocket()
 
   const onLogout = () => {
     logout()
@@ -56,7 +59,13 @@ const AppShell = ({ children }) => {
       <header className="glass-panel sticky top-0 z-30 border-b border-slate-200/60 bg-gradient-to-r from-brand-50/70 to-white px-4 py-4 md:hidden">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-wider text-slate-500">Certified</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs uppercase tracking-wider text-slate-500">Certified</p>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${isConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
+                {isConnected ? 'Live' : 'Connecting'}
+              </span>
+            </div>
             <h1 className="text-xl font-bold text-slate-900">{isAdmin ? 'Admin Console' : 'Student Portal'}</h1>
           </div>
           <button
@@ -72,7 +81,21 @@ const AppShell = ({ children }) => {
       <div className="mx-auto flex w-full max-w-7xl gap-6 px-4 py-6 md:px-6">
         <aside className="glass-panel sticky top-6 hidden h-[calc(100vh-3rem)] w-72 rounded-3xl p-5 md:flex md:flex-col">
           <div className="mb-7">
-            <p className="text-xs uppercase tracking-wider text-brand-700">Certified</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wider text-brand-700">Certified</p>
+              <span
+                id="realtime-status-indicator"
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+                  isConnected
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : 'border-amber-200 bg-amber-50 text-amber-700'
+                }`}
+                title={isConnected ? 'Connected to real-time WebSocket server' : 'Connecting to WebSocket server...'}
+              >
+                <span className={`h-2 w-2 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                {isConnected ? 'Real-Time Live' : 'Connecting...'}
+              </span>
+            </div>
             <h2 className="text-2xl font-bold text-slate-900">{isAdmin ? 'Admin Console' : 'Student Portal'}</h2>
             <p className="mt-2 text-sm text-slate-600">{user?.organization || 'Certified'}</p>
             <div className="mt-3 inline-flex rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-brand-700">
@@ -123,6 +146,7 @@ const AppShell = ({ children }) => {
               <p className="text-sm font-semibold text-brand-700">{roleLabel}</p>
             </div>
           </div>
+          <RealtimeToastContainer />
           <div className="page-fade-in">{children}</div>
         </main>
       </div>

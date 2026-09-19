@@ -12,35 +12,66 @@ import api from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import StatusBadge from '../components/StatusBadge'
 import { formatDate, formatDateTime } from '../utils/date'
+import { useSocket } from '../context/SocketContext'
 
 const DashboardPage = () => {
+  const { socket } = useSocket()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [summary, setSummary] = useState(null)
   const [analytics, setAnalytics] = useState(null)
 
-  useEffect(() => {
-    const fetchDashboard = async () => {
+  const fetchDashboard = async (silent = false) => {
+    if (!silent) {
       setLoading(true)
       setError('')
+    }
 
-      try {
-        const [summaryResponse, analyticsResponse] = await Promise.all([
-          api.get('/certificates/summary/dashboard'),
-          api.get('/analytics'),
-        ])
+    try {
+      const [summaryResponse, analyticsResponse] = await Promise.all([
+        api.get('/certificates/summary/dashboard'),
+        api.get('/analytics'),
+      ])
 
-        setSummary(summaryResponse.data.summary)
-        setAnalytics(analyticsResponse.data.analytics)
-      } catch (requestError) {
+      setSummary(summaryResponse.data.summary)
+      setAnalytics(analyticsResponse.data.analytics)
+    } catch (requestError) {
+      if (!silent) {
         setError(requestError.response?.data?.message || 'Unable to load dashboard data.')
-      } finally {
+      }
+    } finally {
+      if (!silent) {
         setLoading(false)
       }
     }
+  }
 
+  useEffect(() => {
     fetchDashboard()
   }, [])
+
+  useEffect(() => {
+    if (!socket) return
+
+    const handleActivity = () => {
+      // Re-fetch metrics silently when an activity occurs
+      fetchDashboard(true)
+    }
+
+    socket.on('certificate:activity', handleActivity)
+    socket.on('certificate:created', handleActivity)
+    socket.on('certificate:revoked', handleActivity)
+    socket.on('certificate:updated', handleActivity)
+    socket.on('certificate:deleted', handleActivity)
+
+    return () => {
+      socket.off('certificate:activity', handleActivity)
+      socket.off('certificate:created', handleActivity)
+      socket.off('certificate:revoked', handleActivity)
+      socket.off('certificate:updated', handleActivity)
+      socket.off('certificate:deleted', handleActivity)
+    }
+  }, [socket])
 
   const cards = useMemo(() => {
     if (!summary) {

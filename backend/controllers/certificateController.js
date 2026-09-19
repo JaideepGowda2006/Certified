@@ -9,6 +9,7 @@ const createHashSignature = require('../utils/hashSignature');
 const generateQrBuffer = require('../utils/generateQrBuffer');
 const uploadBufferToCloudinary = require('../utils/cloudinaryUpload');
 const generateCertificatePdfBuffer = require('../utils/generatePdfBuffer');
+const { emitCertificateEvent } = require('../utils/socket');
 
 const CLOUDINARY_UPLOAD_TIMEOUT_MS = 20000;
 const DATA_URL_PATTERN = /^data:(image\/(?:png|jpeg|jpg|webp));base64,([A-Za-z0-9+/=]+)$/i;
@@ -512,10 +513,13 @@ const createCertificate = asyncHandler(async (req, res) => {
     createdBy: req.user._id,
   });
 
+  const transformedCert = transformCertificate(certificate);
+  emitCertificateEvent('created', transformedCert);
+
   res.status(201).json({
     success: true,
     message: 'Certificate issued successfully.',
-    certificate: transformCertificate(certificate),
+    certificate: transformedCert,
     templateReceived: hasDrawableObjects(parsedTemplateJson),
   });
 });
@@ -715,10 +719,13 @@ const revokeCertificate = asyncHandler(async (req, res) => {
   certificate.status = 'revoked';
   await certificate.save();
 
+  const transformedCert = transformCertificate(certificate);
+  emitCertificateEvent('revoked', transformedCert);
+
   res.json({
     success: true,
     message: 'Certificate revoked successfully.',
-    certificate: transformCertificate(certificate),
+    certificate: transformedCert,
   });
 });
 
@@ -825,10 +832,13 @@ const updateCertificate = asyncHandler(async (req, res) => {
 
   await certificate.save();
 
+  const transformedCert = transformCertificate(certificate);
+  emitCertificateEvent('updated', transformedCert);
+
   res.json({
     success: true,
     message: 'Certificate updated successfully.',
-    certificate: transformCertificate(certificate),
+    certificate: transformedCert,
   });
 });
 
@@ -842,6 +852,8 @@ const deleteCertificate = asyncHandler(async (req, res) => {
   }
 
   await Certificate.deleteOne({ _id: certificate._id });
+
+  emitCertificateEvent('deleted', { certificateId });
 
   res.json({
     success: true,
