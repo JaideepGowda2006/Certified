@@ -57,6 +57,7 @@ const initialFormState = {
   templateName: 'Default Internship Template',
   certificateTitle: 'CERTIFICATE OF COMPLETION',
   candidateName: '',
+  candidateEmail: '',
   courseName: '',
   issueDate: '',
   certificateId: '',
@@ -1280,6 +1281,10 @@ const CreateCertificatePage = () => {
       formPayload.append('templateId', selectedTemplateId)
     }
 
+    if (formData.candidateEmail?.trim()) {
+      formPayload.append('candidateEmail', formData.candidateEmail.trim().toLowerCase())
+    }
+
     if (formData.certificateId.trim()) {
       formPayload.append('certificateId', formData.certificateId.trim())
     }
@@ -1569,6 +1574,17 @@ const CreateCertificatePage = () => {
               required
               value={formData.candidateName}
               onChange={(event) => setFormData((previous) => ({ ...previous, candidateName: event.target.value }))}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-brand-600"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">Student Email (Optional)</span>
+            <input
+              type="email"
+              placeholder="student@example.com"
+              value={formData.candidateEmail || ''}
+              onChange={(event) => setFormData((previous) => ({ ...previous, candidateEmail: event.target.value }))}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-brand-600"
             />
           </label>

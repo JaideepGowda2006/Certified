@@ -310,6 +310,33 @@ const runTests = async () => {
       `Count: ${adminListRes.data?.certificates?.length}`
     );
 
+    // Create a certificate issued to student@certified.test
+    const studentCertId = `STU-CERT-${Date.now()}`;
+    await Certificate.create({
+      certificateId: studentCertId,
+      candidateName: 'Certified Student',
+      candidateEmail: 'student@certified.test',
+      certificateTitle: 'Advanced Cloud Architecture',
+      courseName: 'Cloud Engineering',
+      issueDate: new Date(),
+      issuerName: 'Certified Authority',
+      status: 'active',
+      pdfUrl: 'https://example.com/student.pdf',
+      qrUrl: 'https://example.com/student.png',
+      hashSignature: '11223344556677889900aabbccddeeff',
+      cloudinaryPublicId: 'student_public_id',
+      createdBy: adminUser._id,
+    });
+
+    const studentCertListRes = await makeRequest('/api/certificates', {
+      headers: { Authorization: `Bearer ${studentToken}` },
+    });
+    assert(
+      studentCertListRes.status === 200 && studentCertListRes.data?.certificates?.some(c => c.certificateId === studentCertId),
+      'Student can view certificate given/linked to their email by Admin',
+      `Student cert count: ${studentCertListRes.data?.certificates?.length}`
+    );
+
     const adminSummaryRes = await makeRequest('/api/certificates/summary/dashboard', {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
@@ -319,8 +346,9 @@ const runTests = async () => {
       JSON.stringify(adminSummaryRes.data?.summary)
     );
 
-    // Clean up public test certificate
+    // Clean up test certificates
     await Certificate.deleteOne({ certificateId: publicCertId });
+    await Certificate.deleteOne({ certificateId: studentCertId });
 
   } catch (err) {
     console.error('Unexpected error during test suite:', err);

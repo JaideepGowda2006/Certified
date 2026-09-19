@@ -3,7 +3,7 @@ const ScanLog = require('../models/ScanLog');
 const asyncHandler = require('../utils/asyncHandler');
 
 const getCertificateIdsForUser = async (user) => {
-  if (user.role === 'admin') {
+  if (user.role === 'admin' || user.role === 'issuer') {
     const allCertificates = await Certificate.find({}, { certificateId: 1, certificateTitle: 1, candidateName: 1 }).lean();
     return {
       ids: allCertificates.map((item) => item.certificateId),
@@ -11,8 +11,17 @@ const getCertificateIdsForUser = async (user) => {
     };
   }
 
-  const certificates = await Certificate.find(
+  const userEmail = (user.email || '').toLowerCase();
+  const orConditions = [
+    { candidateEmail: userEmail },
     { createdBy: user._id },
+  ];
+  if (user.name) {
+    orConditions.push({ candidateName: { $regex: `^${user.name.trim()}$`, $options: 'i' } });
+  }
+
+  const certificates = await Certificate.find(
+    { $or: orConditions },
     { certificateId: 1, certificateTitle: 1, candidateName: 1 },
   ).lean();
 

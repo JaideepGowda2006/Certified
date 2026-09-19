@@ -13,6 +13,13 @@ const certificateSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    candidateEmail: {
+      type: String,
+      default: '',
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
     certificateTitle: {
       type: String,
       required: true,

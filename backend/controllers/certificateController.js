@@ -251,6 +251,8 @@ const getVerificationUrl = (certificateId) => {
 const createCertificate = asyncHandler(async (req, res) => {
   const {
     candidateName,
+    candidateEmail: candidateEmailFromBody,
+    recipientEmail,
     certificateTitle,
     courseName: courseNameFromBody,
     course,
@@ -265,6 +267,7 @@ const createCertificate = asyncHandler(async (req, res) => {
     certificateId: requestedCertificateIdRaw,
   } = req.body;
 
+  const candidateEmail = String(candidateEmailFromBody || recipientEmail || '').trim().toLowerCase();
   const courseName = courseNameFromBody || course;
   const issuerName = issuerNameFromBody || req.user.name;
   const normalizedCertificateTitle = String(certificateTitle || 'Certificate of Completion').trim();
@@ -450,6 +453,7 @@ const createCertificate = asyncHandler(async (req, res) => {
   const certificatePayload = {
     certificateId,
     candidateName,
+    candidateEmail,
     certificateTitle: normalizedCertificateTitle,
     courseName,
     issueDate: parsedIssueDate,
@@ -622,14 +626,35 @@ const getQrPlaceholderImage = asyncHandler(async (req, res) => {
 
 const getCertificates = asyncHandler(async (req, res) => {
   const searchQuery = req.query.search ? String(req.query.search).trim() : '';
-  const filter = req.user.role === 'admin' ? {} : { createdBy: req.user._id };
+  const isAdminUser = ['admin', 'issuer'].includes(req.user.role);
+
+  let filter = {};
+  if (!isAdminUser) {
+    const userEmail = (req.user.email || '').toLowerCase();
+    const orConditions = [
+      { candidateEmail: userEmail },
+      { createdBy: req.user._id },
+    ];
+    if (req.user.name) {
+      orConditions.push({ candidateName: { $regex: `^${req.user.name.trim()}$`, $options: 'i' } });
+    }
+    filter = { $or: orConditions };
+  }
 
   if (searchQuery) {
-    filter.$or = [
-      { certificateId: { $regex: searchQuery, $options: 'i' } },
-      { candidateName: { $regex: searchQuery, $options: 'i' } },
-      { certificateTitle: { $regex: searchQuery, $options: 'i' } },
-    ];
+    const searchCondition = {
+      $or: [
+        { certificateId: { $regex: searchQuery, $options: 'i' } },
+        { candidateName: { $regex: searchQuery, $options: 'i' } },
+        { certificateTitle: { $regex: searchQuery, $options: 'i' } },
+      ],
+    };
+
+    if (filter.$or) {
+      filter = { $and: [filter, searchCondition] };
+    } else {
+      filter = searchCondition;
+    }
   }
 
   const certificates = await Certificate.find(filter).sort({ createdAt: -1 });
@@ -650,7 +675,14 @@ const getCertificateById = asyncHandler(async (req, res) => {
     throw new Error('Certificate not found.');
   }
 
-  if (req.user.role !== 'admin' && String(certificate.createdBy) !== String(req.user._id)) {
+  const isAdminUser = ['admin', 'issuer'].includes(req.user.role);
+  const userEmail = (req.user.email || '').toLowerCase();
+  const isOwnerOrRecipient =
+    String(certificate.createdBy) === String(req.user._id) ||
+    (certificate.candidateEmail && certificate.candidateEmail.toLowerCase() === userEmail) ||
+    (req.user.name && certificate.candidateName.toLowerCase() === req.user.name.toLowerCase());
+
+  if (!isAdminUser && !isOwnerOrRecipient) {
     res.status(403);
     throw new Error('You do not have access to this certificate.');
   }
@@ -691,7 +723,19 @@ const revokeCertificate = asyncHandler(async (req, res) => {
 });
 
 const getDashboardSummary = asyncHandler(async (req, res) => {
-  const baseFilter = req.user.role === 'admin' ? {} : { createdBy: req.user._id };
+  const isAdminUser = ['admin', 'issuer'].includes(req.user.role);
+  let baseFilter = {};
+  if (!isAdminUser) {
+    const userEmail = (req.user.email || '').toLowerCase();
+    const orConditions = [
+      { candidateEmail: userEmail },
+      { createdBy: req.user._id },
+    ];
+    if (req.user.name) {
+      orConditions.push({ candidateName: { $regex: `^${req.user.name.trim()}$`, $options: 'i' } });
+    }
+    baseFilter = { $or: orConditions };
+  }
 
   const certificates = await Certificate.find(baseFilter).sort({ createdAt: -1 }).lean();
   const certificateIds = certificates.map((item) => item.certificateId);
@@ -763,6 +807,7 @@ const updateCertificate = asyncHandler(async (req, res) => {
 
   const {
     candidateName,
+    candidateEmail,
     certificateTitle,
     courseName,
     grade,
@@ -771,6 +816,7 @@ const updateCertificate = asyncHandler(async (req, res) => {
   } = req.body;
 
   if (candidateName) certificate.candidateName = String(candidateName).trim();
+  if (candidateEmail !== undefined) certificate.candidateEmail = String(candidateEmail).trim().toLowerCase();
   if (certificateTitle) certificate.certificateTitle = String(certificateTitle).trim();
   if (courseName) certificate.courseName = String(courseName).trim();
   if (grade !== undefined) certificate.grade = String(grade).trim();
