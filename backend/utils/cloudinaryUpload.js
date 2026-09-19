@@ -2,6 +2,13 @@ const { v2: cloudinary } = require('cloudinary');
 
 const isDemoMode = () => process.env.DEMO_MODE === 'true';
 
+const hasCloudinaryCredentials = () =>
+  Boolean(
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET,
+  );
+
 const getDemoDataUrl = (buffer, options) => {
   const mimeType = options.resource_type === 'raw'
     ? 'application/pdf'
@@ -15,10 +22,10 @@ const getDemoDataUrl = (buffer, options) => {
 };
 
 const uploadBufferToCloudinary = (buffer, options = {}) => {
-  if (isDemoMode()) {
+  if (isDemoMode() || !hasCloudinaryCredentials()) {
     return Promise.resolve({
       secure_url: getDemoDataUrl(buffer, options),
-      public_id: options.public_id || `demo_asset_${Date.now()}`,
+      public_id: options.public_id || `local_asset_${Date.now()}`,
     });
   }
 
