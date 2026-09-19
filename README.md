@@ -1,5 +1,7 @@
 # Certified
 
+[![CI/CD Pipeline](https://github.com/JaideepGowda2006/Certified/actions/workflows/ci.yml/badge.svg)](https://github.com/JaideepGowda2006/Certified/actions/workflows/ci.yml)
+
 Certified is a production-ready full-stack SaaS application for secure digital certificate issuance and public verification.
 
 ## Core Capabilities
