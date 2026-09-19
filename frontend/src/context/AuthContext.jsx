@@ -50,12 +50,13 @@ export const AuthProvider = ({ children }) => {
     return data.user
   }
 
-  const register = async ({ name, email, password, organization }) => {
+  const register = async ({ name, email, password, organization, role }) => {
     const { data } = await api.post('/auth/register', {
       name,
       email,
       password,
       organization,
+      role,
     })
 
     persistSession(data.token, data.user)
@@ -70,6 +71,9 @@ export const AuthProvider = ({ children }) => {
     () => ({
       token,
       user,
+      role: user?.role || '',
+      isAdmin: user?.role === 'admin' || user?.role === 'issuer',
+      isStudent: user?.role === 'student' || user?.role === 'user',
       loading,
       isAuthenticated: Boolean(token && user),
       login,
@@ -86,6 +90,7 @@ AuthProvider.propTypes = {
   children: PropTypes.node.isRequired,
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext)
 

@@ -752,6 +752,57 @@ const getDashboardSummary = asyncHandler(async (req, res) => {
   });
 });
 
+const updateCertificate = asyncHandler(async (req, res) => {
+  const { certificateId } = req.params;
+  const certificate = await Certificate.findOne({ certificateId });
+
+  if (!certificate) {
+    res.status(404);
+    throw new Error('Certificate not found.');
+  }
+
+  const {
+    candidateName,
+    certificateTitle,
+    courseName,
+    grade,
+    description,
+    expiryDate,
+  } = req.body;
+
+  if (candidateName) certificate.candidateName = String(candidateName).trim();
+  if (certificateTitle) certificate.certificateTitle = String(certificateTitle).trim();
+  if (courseName) certificate.courseName = String(courseName).trim();
+  if (grade !== undefined) certificate.grade = String(grade).trim();
+  if (description !== undefined) certificate.description = String(description).trim();
+  if (expiryDate !== undefined) certificate.expiryDate = expiryDate ? new Date(expiryDate) : null;
+
+  await certificate.save();
+
+  res.json({
+    success: true,
+    message: 'Certificate updated successfully.',
+    certificate: transformCertificate(certificate),
+  });
+});
+
+const deleteCertificate = asyncHandler(async (req, res) => {
+  const { certificateId } = req.params;
+  const certificate = await Certificate.findOne({ certificateId });
+
+  if (!certificate) {
+    res.status(404);
+    throw new Error('Certificate not found.');
+  }
+
+  await Certificate.deleteOne({ _id: certificate._id });
+
+  res.json({
+    success: true,
+    message: 'Certificate deleted successfully.',
+  });
+});
+
 module.exports = {
   createCertificate,
   saveCertificateTemplate,
@@ -761,5 +812,7 @@ module.exports = {
   getCertificates,
   getCertificateById,
   revokeCertificate,
+  updateCertificate,
+  deleteCertificate,
   getDashboardSummary,
 };

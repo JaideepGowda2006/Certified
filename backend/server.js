@@ -105,12 +105,16 @@ const startServer = async () => {
   await connectDB();
   configureCloudinary();
 
-  app.listen(port, () => {
+  return app.listen(port, () => {
     console.log(`Certified backend listening on port ${port}`);
   });
 };
 
-startServer().catch((error) => {
-  console.error('Failed to start backend server:', error.message);
-  process.exit(1);
-});
+if (require.main === module) {
+  startServer().catch((error) => {
+    console.error('Failed to start backend server:', error.message);
+    process.exit(1);
+  });
+}
+
+module.exports = { app, startServer, ensureJwtSecret };

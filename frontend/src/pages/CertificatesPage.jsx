@@ -4,8 +4,10 @@ import api from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import StatusBadge from '../components/StatusBadge'
 import { formatDate } from '../utils/date'
+import { useAuth } from '../context/AuthContext'
 
 const CertificatesPage = () => {
+  const { isAdmin } = useAuth()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
@@ -130,7 +132,7 @@ const CertificatesPage = () => {
                           Verify
                         </button>
 
-                        {certificate.status !== 'revoked' && (
+                        {isAdmin && certificate.status !== 'revoked' && (
                           <button
                             type="button"
                             onClick={() => onRevoke(certificate.certificateId)}

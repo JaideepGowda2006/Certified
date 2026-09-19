@@ -36,12 +36,20 @@ const baseNavClass =
 
 const AppShell = ({ children }) => {
   const navigate = useNavigate()
-  const { logout, user } = useAuth()
+  const { logout, user, isAdmin } = useAuth()
 
   const onLogout = () => {
     logout()
     navigate('/login')
   }
+
+  const roleLabel = isAdmin ? 'Admin' : (user?.role === 'student' || user?.role === 'user' ? 'Student' : user?.role || 'User')
+  const visibleNavItems = navItems.filter((item) => {
+    if (item.to === '/create-certificate') {
+      return isAdmin
+    }
+    return true
+  })
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -49,7 +57,7 @@ const AppShell = ({ children }) => {
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-wider text-slate-500">Certified</p>
-            <h1 className="text-xl font-bold text-slate-900">Issuer Console</h1>
+            <h1 className="text-xl font-bold text-slate-900">{isAdmin ? 'Admin Console' : 'Student Portal'}</h1>
           </div>
           <button
             type="button"
@@ -65,15 +73,15 @@ const AppShell = ({ children }) => {
         <aside className="glass-panel sticky top-6 hidden h-[calc(100vh-3rem)] w-72 rounded-3xl p-5 md:flex md:flex-col">
           <div className="mb-7">
             <p className="text-xs uppercase tracking-wider text-brand-700">Certified</p>
-            <h2 className="text-2xl font-bold text-slate-900">Issuer Console</h2>
-            <p className="mt-2 text-sm text-slate-600">{user?.organization || 'Organization'}</p>
+            <h2 className="text-2xl font-bold text-slate-900">{isAdmin ? 'Admin Console' : 'Student Portal'}</h2>
+            <p className="mt-2 text-sm text-slate-600">{user?.organization || 'Certified'}</p>
             <div className="mt-3 inline-flex rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-brand-700">
-              {user?.role || 'issuer'} mode
+              {roleLabel} mode
             </div>
           </div>
 
           <nav className="flex flex-1 flex-col gap-2">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon
               return (
                 <NavLink
@@ -108,11 +116,11 @@ const AppShell = ({ children }) => {
           <div className="mb-5 flex items-center justify-between rounded-2xl bg-white/70 px-4 py-3 shadow-soft md:hidden">
             <div>
               <p className="text-xs text-slate-500">Signed in as</p>
-              <p className="text-sm font-semibold text-slate-900">{user?.name || 'Issuer'}</p>
+              <p className="text-sm font-semibold text-slate-900">{user?.name || 'User'}</p>
             </div>
             <div className="text-right">
               <p className="text-xs text-slate-500">Role</p>
-              <p className="text-sm font-semibold text-brand-700">{user?.role || 'issuer'}</p>
+              <p className="text-sm font-semibold text-brand-700">{roleLabel}</p>
             </div>
           </div>
           <div className="page-fade-in">{children}</div>
@@ -120,7 +128,7 @@ const AppShell = ({ children }) => {
       </div>
 
       <nav className="glass-panel fixed bottom-3 left-1/2 z-30 flex w-[calc(100%-1.5rem)] -translate-x-1/2 items-center justify-around rounded-2xl border border-slate-200/80 px-2 py-2 md:hidden">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon
 
           return (

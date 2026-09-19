@@ -8,9 +8,11 @@ const {
   getCertificates,
   getCertificateById,
   revokeCertificate,
+  updateCertificate,
+  deleteCertificate,
   getDashboardSummary,
 } = require('../controllers/certificateController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, authorizeRoles } = require('../middleware/authMiddleware');
 const { upload, validateUploadedImages } = require('../middleware/uploadMiddleware');
 const { issueLimiter } = require('../middleware/rateLimiters');
 
@@ -30,13 +32,14 @@ router.use(protect);
 
 router.get('/templates', getCertificateTemplates);
 router.get('/templates/:templateId', getCertificateTemplateById);
-router.post('/templates', issueLimiter, saveCertificateTemplate);
+router.post('/templates', authorizeRoles('admin', 'issuer'), issueLimiter, saveCertificateTemplate);
 router.get('/qr-image', getQrPlaceholderImage);
 
 router.get('/', getCertificates);
 router.get('/summary/dashboard', getDashboardSummary);
 router.post(
   '/create',
+  authorizeRoles('admin', 'issuer'),
   issueLimiter,
   upload.fields(createCertificateUploadFields),
   validateUploadedImages,
@@ -44,12 +47,16 @@ router.post(
 );
 router.post(
   '/',
+  authorizeRoles('admin', 'issuer'),
   issueLimiter,
   upload.fields(createCertificateUploadFields),
   validateUploadedImages,
   createCertificate,
 );
 router.get('/:certificateId', getCertificateById);
-router.patch('/:certificateId/revoke', revokeCertificate);
+router.put('/:certificateId', authorizeRoles('admin', 'issuer'), updateCertificate);
+router.patch('/:certificateId', authorizeRoles('admin', 'issuer'), updateCertificate);
+router.patch('/:certificateId/revoke', authorizeRoles('admin', 'issuer'), revokeCertificate);
+router.delete('/:certificateId', authorizeRoles('admin', 'issuer'), deleteCertificate);
 
 module.exports = router;

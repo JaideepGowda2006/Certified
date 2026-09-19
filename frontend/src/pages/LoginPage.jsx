@@ -15,6 +15,7 @@ const LoginPage = () => {
     organization: '',
     email: '',
     password: '',
+    role: 'student',
   })
 
   const redirectTo = useMemo(() => location.state?.from || '/dashboard', [location.state])
@@ -59,11 +60,11 @@ const LoginPage = () => {
       <div className="glass-panel w-full max-w-lg rounded-3xl p-6 md:p-8">
         <div className="mb-6">
           <p className="text-xs uppercase tracking-[0.26em] text-brand-700">Certified</p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-900">{mode === 'login' ? 'Admin Login' : 'Create Issuer Account'}</h1>
+          <h1 className="mt-2 text-3xl font-bold text-slate-900">{mode === 'login' ? 'Account Login' : 'Create Account'}</h1>
           <p className="mt-2 text-sm text-slate-600">
             {mode === 'login'
-              ? 'Access your issuer dashboard to issue and manage certificates.'
-              : 'Register your organization and start issuing secure credentials.'}
+              ? 'Access your portal to verify, manage, or issue certificates.'
+              : 'Register as an Admin or Student to get started.'}
           </p>
         </div>
 
@@ -92,6 +93,21 @@ const LoginPage = () => {
           {mode === 'register' && (
             <>
               <div>
+                <label htmlFor="role" className="mb-1 block text-sm font-semibold text-slate-700">
+                  Account Role
+                </label>
+                <select
+                  id="role"
+                  name="role"
+                  value={formData.role}
+                  onChange={onChange}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-brand-600"
+                >
+                  <option value="student">Student / User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div>
                 <label htmlFor="name" className="mb-1 block text-sm font-semibold text-slate-700">
                   Full Name
                 </label>
@@ -103,12 +119,12 @@ const LoginPage = () => {
                   onChange={onChange}
                   required
                   className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-brand-600"
-                  placeholder="Alex Issuer"
+                  placeholder="Alex Morgan"
                 />
               </div>
               <div>
                 <label htmlFor="organization" className="mb-1 block text-sm font-semibold text-slate-700">
-                  Organization
+                  Organization / University
                 </label>
                 <input
                   id="organization"
@@ -116,9 +132,8 @@ const LoginPage = () => {
                   type="text"
                   value={formData.organization}
                   onChange={onChange}
-                  required
                   className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-brand-600"
-                  placeholder="Northbridge Institute"
+                  placeholder="Northbridge University"
                 />
               </div>
             </>

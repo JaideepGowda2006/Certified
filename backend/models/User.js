@@ -25,12 +25,14 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['admin', 'issuer'],
-      default: 'issuer',
+      enum: ['admin', 'issuer', 'student', 'user'],
+      default: 'student',
+      lowercase: true,
+      trim: true,
     },
     organization: {
       type: String,
-      required: true,
+      default: 'Certified',
       trim: true,
       maxlength: 140,
     },

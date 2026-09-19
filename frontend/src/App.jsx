@@ -33,7 +33,7 @@ function App() {
       <Route
         path="/create-certificate"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={['admin', 'issuer']}>
             <CreateCertificateStudioPage />
           </ProtectedRoute>
         }
@@ -41,7 +41,7 @@ function App() {
       <Route
         path="/create-certificate/editor"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={['admin', 'issuer']}>
             <CreateCertificateStudioPage />
           </ProtectedRoute>
         }
