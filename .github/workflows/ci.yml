@@ -82,9 +82,39 @@ jobs:
           VITE_API_BASE_URL: https://truecert-backend.onrender.com/api
         run: npm run build
 
+  docker-build:
+    name: Docker Image Build & Smoke Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend Docker image
+        run: |
+          docker build -t certified-backend:latest ./backend
+          docker images certified-backend:latest
+
+      - name: Test container startup & health check
+        run: |
+          docker run -d --name test-backend -p 5000:5000 \
+            -e NODE_ENV=production \
+            -e PORT=5000 \
+            -e JWT_SECRET=ci_docker_testing_secret_key_minimum_32_characters \
+            -e DEMO_MODE=true \
+            certified-backend:latest
+          sleep 4
+          docker ps
+          curl -f http://127.0.0.1:5000/health || (docker logs test-backend && exit 1)
+          docker stop test-backend
+          docker rm test-backend
+
   deployment-status:
     name: Continuous Deployment Verification
-    needs: [backend-checks, frontend-checks]
+    needs: [backend-checks, frontend-checks, docker-build]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
 
@@ -96,7 +126,8 @@ jobs:
           echo "=========================================================="
           echo "1. Backend syntax, seed, and 16 integration tests: PASSED"
           echo "2. Frontend production Vite build: PASSED"
-          echo "3. Continuous Deployments Triggered on GitHub 'main':"
+          echo "3. Docker image build & container health test: PASSED"
+          echo "4. Continuous Deployments Triggered on GitHub 'main':"
           echo "   - Frontend: Vercel (Production)"
           echo "   - Backend: Render Web Service"
           echo "=========================================================="
