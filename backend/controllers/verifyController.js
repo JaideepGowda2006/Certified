@@ -181,6 +181,8 @@ const verifyCertificate = asyncHandler(async (req, res) => {
       organization: certificate.organization,
       status: certificate.status,
       effectiveStatus,
+      revocationReason: certificate.revocationReason || '',
+      revokedAt: certificate.revokedAt || null,
       grade: certificate.grade,
       description: certificate.description,
       pdfAccessUrl,

@@ -174,8 +174,48 @@ const runExperiment8Tests = async () => {
       'Socket payload shows status as revoked',
       revCert?.status
     );
+    assert(
+      revCert?.revocationReason === 'Automated test revocation for WebSocket validation',
+      'Socket payload includes revocationReason',
+      revCert?.revocationReason
+    );
 
-    // 5. Clean up test certificate
+    // 5. Real-time Certificate Unrevoke (Reinstate) Event
+    console.log('\n[Test 5] Verifying certificate:unrevoked event');
+    const unrevokedEventPromise = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('Timed out waiting for certificate:unrevoked')), 5000);
+      clientSocket.once('certificate:unrevoked', (payload) => {
+        clearTimeout(timer);
+        resolve(payload);
+      });
+    });
+
+    const unrevokeRes = await makeRequest(`/api/certificates/${testCertificateId}/unrevoke`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+
+    assert(unrevokeRes.status === 200, `Certificate unrevoked/reinstated via API (${unrevokeRes.status})`);
+
+    const unrevokedPayload = await unrevokedEventPromise;
+    const unrevCert = unrevokedPayload?.certificate || unrevokedPayload;
+    assert(
+      (unrevCert?.certificateId || unrevokedPayload?.certificateId) === testCertificateId,
+      'Socket received certificate:unrevoked event with matching certificateId',
+      unrevCert?.certificateId
+    );
+    assert(
+      unrevCert?.status === 'active' || unrevCert?.effectiveStatus === 'active',
+      'Socket payload shows status returned to active',
+      unrevCert?.status
+    );
+    assert(
+      unrevCert?.revocationReason === '',
+      'Socket payload clears revocationReason after unrevoking',
+      unrevCert?.revocationReason
+    );
+
+    // 6. Clean up test certificate
     await Certificate.deleteOne({ certificateId: testCertificateId });
     console.log('\n[Cleanup] Test certificate deleted from database.');
 

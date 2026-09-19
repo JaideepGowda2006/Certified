@@ -48,6 +48,20 @@ const certificateSchema = new mongoose.Schema(
       enum: ['active', 'revoked'],
       default: 'active',
     },
+    revocationReason: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    revokedAt: {
+      type: Date,
+      default: null,
+    },
+    revokedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     grade: {
       type: String,
       default: '',

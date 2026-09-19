@@ -8,6 +8,7 @@ const {
   getCertificates,
   getCertificateById,
   revokeCertificate,
+  unrevokeCertificate,
   updateCertificate,
   deleteCertificate,
   getDashboardSummary,
@@ -57,6 +58,8 @@ router.get('/:certificateId', getCertificateById);
 router.put('/:certificateId', authorizeRoles('admin', 'issuer'), updateCertificate);
 router.patch('/:certificateId', authorizeRoles('admin', 'issuer'), updateCertificate);
 router.patch('/:certificateId/revoke', authorizeRoles('admin', 'issuer'), revokeCertificate);
+router.patch('/:certificateId/unrevoke', authorizeRoles('admin', 'issuer'), unrevokeCertificate);
+router.post('/:certificateId/unrevoke', authorizeRoles('admin', 'issuer'), unrevokeCertificate);
 router.delete('/:certificateId', authorizeRoles('admin', 'issuer'), deleteCertificate);
 
 module.exports = router;

@@ -75,10 +75,20 @@ export const SocketProvider = ({ children }) => {
     })
 
     newSocket.on('certificate:revoked', (certificate) => {
+      const reasonText = certificate.revocationReason ? ` Reason: "${certificate.revocationReason}"` : ''
       addNotification({
         type: 'revoked',
         title: 'Certificate Revoked',
-        message: `Certificate ${certificate.certificateId} has been revoked.`,
+        message: `Certificate ${certificate.certificateId} has been revoked.${reasonText}`,
+        certificateId: certificate.certificateId,
+      })
+    })
+
+    newSocket.on('certificate:unrevoked', (certificate) => {
+      addNotification({
+        type: 'created',
+        title: 'Certificate Reinstated',
+        message: `Certificate ${certificate.certificateId} revocation was removed and is now active!`,
         certificateId: certificate.certificateId,
       })
     })

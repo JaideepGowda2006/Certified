@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { FaDownload, FaEye, FaLock, FaQrcode, FaShieldAlt } from 'react-icons/fa'
+import { FaDownload, FaExclamationTriangle, FaEye, FaLock, FaQrcode, FaShieldAlt } from 'react-icons/fa'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   LinkedinIcon,
@@ -321,6 +321,24 @@ const VerifyPage = () => {
                 ID: {certificate.certificateId}
               </div>
             </div>
+
+            {(certificate.effectiveStatus === 'revoked' || certificate.status === 'revoked') && (
+              <div className="rounded-2xl border border-rose-300 bg-rose-50/90 p-4 text-rose-900 shadow-sm">
+                <div className="flex items-center gap-2 font-bold text-rose-800">
+                  <FaExclamationTriangle className="text-rose-600 text-lg" />
+                  <span>This Certificate Was Revoked</span>
+                </div>
+                <p className="mt-2 text-sm text-rose-700">
+                  <span className="font-semibold">Reason for Revocation:</span>{' '}
+                  {certificate.revocationReason || 'Revoked by issuing authority'}
+                </p>
+                {certificate.revokedAt && (
+                  <p className="mt-1 text-xs text-rose-500">
+                    Effective from: {formatDateTime(certificate.revokedAt)}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="rounded-2xl border border-slate-200 bg-white/95 p-4">
               <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">

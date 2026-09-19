@@ -699,6 +699,7 @@ const getCertificateById = asyncHandler(async (req, res) => {
 
 const revokeCertificate = asyncHandler(async (req, res) => {
   const { certificateId } = req.params;
+  const { reason, revocationReason } = req.body || {};
   const certificate = await Certificate.findOne({ certificateId });
 
   if (!certificate) {
@@ -716,7 +717,12 @@ const revokeCertificate = asyncHandler(async (req, res) => {
     throw new Error('Certificate is already revoked.');
   }
 
+  const finalReason = String(reason || revocationReason || '').trim() || 'Revoked by authority';
+
   certificate.status = 'revoked';
+  certificate.revocationReason = finalReason;
+  certificate.revokedAt = new Date();
+  certificate.revokedBy = req.user._id;
   await certificate.save();
 
   const transformedCert = transformCertificate(certificate);
@@ -725,6 +731,41 @@ const revokeCertificate = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: 'Certificate revoked successfully.',
+    certificate: transformedCert,
+  });
+});
+
+const unrevokeCertificate = asyncHandler(async (req, res) => {
+  const { certificateId } = req.params;
+  const certificate = await Certificate.findOne({ certificateId });
+
+  if (!certificate) {
+    res.status(404);
+    throw new Error('Certificate not found.');
+  }
+
+  if (req.user.role !== 'admin' && String(certificate.createdBy) !== String(req.user._id)) {
+    res.status(403);
+    throw new Error('You do not have permission to reinstate this certificate.');
+  }
+
+  if (certificate.status !== 'revoked') {
+    res.status(400);
+    throw new Error('Certificate is not currently revoked.');
+  }
+
+  certificate.status = 'active';
+  certificate.revocationReason = '';
+  certificate.revokedAt = null;
+  certificate.revokedBy = null;
+  await certificate.save();
+
+  const transformedCert = transformCertificate(certificate);
+  emitCertificateEvent('unrevoked', transformedCert);
+
+  res.json({
+    success: true,
+    message: 'Certificate revocation removed successfully.',
     certificate: transformedCert,
   });
 });
@@ -870,6 +911,7 @@ module.exports = {
   getCertificates,
   getCertificateById,
   revokeCertificate,
+  unrevokeCertificate,
   updateCertificate,
   deleteCertificate,
   getDashboardSummary,
