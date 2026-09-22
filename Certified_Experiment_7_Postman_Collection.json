@@ -13,12 +13,12 @@
     },
     {
       "key": "adminToken",
-      "value": "",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhYWVkMTJlNWRiYzdjNTUzODkzMzNhOSIsImVtYWlsIjoiYWRtaW5AY2VydGlmaWVkLnRlc3QiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3OTAxMDczNTYsImV4cCI6MTc5MDcxMjE1Nn0.mFMmvk_9oYqxR5dLNcdwYnKuewbvcsIghBr6fvw7iwk",
       "type": "string"
     },
     {
       "key": "studentToken",
-      "value": "",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhYjJkY2VkMDUwZjE3N2I3YzFkZmM1NSIsImVtYWlsIjoic3R1ZGVudEBjZXJ0aWZpZWQudGVzdCIsInJvbGUiOiJzdHVkZW50IiwiaWF0IjoxNzkwMTA3MzU3LCJleHAiOjE3OTA3MTIxNTd9.xhox9wLYDfYaXDHDWaEwCoz76zVAAgPjKka5Hl-Vd58",
       "type": "string"
     },
     {
