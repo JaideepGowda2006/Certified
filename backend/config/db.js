@@ -2,12 +2,13 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   const isProduction = process.env.NODE_ENV === 'production';
+  const isDemo = String(process.env.DEMO_MODE || '').toLowerCase() === 'true';
   const configuredMongoUri = process.env.MONGODB_URI;
   let mongoUri;
 
   if (configuredMongoUri) {
     mongoUri = configuredMongoUri;
-  } else if (isProduction) {
+  } else if (isProduction && !isDemo) {
     throw new Error('MONGODB_URI is not configured in environment variables.');
   } else {
     mongoUri = 'mongodb://127.0.0.1:27017/truecert';

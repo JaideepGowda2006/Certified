@@ -206,12 +206,13 @@ const port = Number(process.env.PORT) || 5000;
 const ensureJwtSecret = () => {
   const secret = String(process.env.JWT_SECRET || '');
   const isProduction = process.env.NODE_ENV === 'production';
+  const isDemo = String(process.env.DEMO_MODE || '').toLowerCase() === 'true';
 
   if (secret.length >= 32) {
     return;
   }
 
-  if (isProduction) {
+  if (isProduction && !isDemo) {
     if (!secret) {
       throw new Error('JWT_SECRET is required.');
     }
@@ -221,7 +222,7 @@ const ensureJwtSecret = () => {
 
   process.env.JWT_SECRET = crypto.randomBytes(48).toString('hex');
   console.warn(
-    'JWT_SECRET was missing or weak. Generated a temporary dev secret; set JWT_SECRET in backend/.env for stable sessions.',
+    'JWT_SECRET was missing or weak. Generated a temporary secure secret for demo/development.',
   );
 };
 

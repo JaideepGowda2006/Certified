@@ -4,6 +4,20 @@
 # -------------------------------------------------------------
 
 services:
+  mongodb:
+    image: mongo:7.0
+    container_name: certified-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand({ ping: 1 })"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   certified-backend:
     build:
       context: ./backend
@@ -13,15 +27,15 @@ services:
     restart: unless-stopped
     ports:
       - "${HOST_PORT:-5000}:5000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=5000
-      - MONGODB_URI=${MONGODB_URI}
-      - JWT_SECRET=${JWT_SECRET}
-      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
-      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
-      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
-      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017/truecert}
+      - JWT_SECRET=${JWT_SECRET:-certified_docker_devops_secret_key_minimum_32_characters_123456}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173,https://hoppscotch.io}
       - DEMO_MODE=${DEMO_MODE:-true}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/health"]
@@ -29,3 +43,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+volumes:
+  mongodb_data:
