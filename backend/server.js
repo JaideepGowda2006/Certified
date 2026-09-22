@@ -240,8 +240,8 @@ const startServer = async () => {
 
   const server = createServerInstance();
 
-  return server.listen(port, () => {
-    console.log(`Certified backend with Socket.IO listening on port ${port}`);
+  return server.listen(port, '0.0.0.0', () => {
+    console.log(`Certified backend with Socket.IO listening on 0.0.0.0:${port}`);
   });
 };
 
