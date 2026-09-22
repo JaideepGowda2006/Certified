@@ -23,7 +23,7 @@
     },
     {
       "key": "certificateId",
-      "value": "TCT8DRWCWL2JP",
+      "value": "TC5X5G3UZHCEB",
       "type": "string"
     }
   ],
@@ -848,9 +848,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/verify/TCT8DRWCWL2JP",
+              "raw": "{{baseUrl}}/api/verify/TC5X5G3UZHCEB",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "verify", "TCT8DRWCWL2JP"]
+              "path": ["api", "verify", "TC5X5G3UZHCEB"]
             }
           }
         },
@@ -903,9 +903,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/verify/TCT8DRWCWL2JP/pdf",
+              "raw": "{{baseUrl}}/api/verify/TC5X5G3UZHCEB/pdf",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "verify", "TCT8DRWCWL2JP", "pdf"]
+              "path": ["api", "verify", "TC5X5G3UZHCEB", "pdf"]
             }
           }
         }
