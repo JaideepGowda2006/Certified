@@ -235,7 +235,18 @@ const createServerInstance = () => {
 const startServer = async () => {
   ensureJwtSecret();
 
-  await connectDB();
+  try {
+    await connectDB();
+  } catch (err) {
+    if (process.env.DEMO_MODE === 'true') {
+      console.warn(
+        `[Demo Mode] MongoDB connection deferred (${err.message}). Starting server in standalone demo mode...`,
+      );
+    } else {
+      throw err;
+    }
+  }
+
   configureCloudinary();
 
   const server = createServerInstance();

@@ -20,7 +20,7 @@ const connectDB = async (retries = 5, delayMs = 2000) => {
   const isSrv = mongoUri.includes('mongodb+srv://');
   const hasDirectParam = mongoUri.includes('directConnection=');
   const connectOptions = {
-    serverSelectionTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 2500,
     ...(isSrv || hasDirectParam ? {} : { directConnection: true }),
   };
 
