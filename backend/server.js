@@ -20,10 +20,19 @@ const sanitizeRequest = require('./middleware/sanitizeMiddleware');
 
 const app = express();
 
-const corsOrigins = (process.env.FRONTEND_URL || '')
+const defaultAllowedOrigins = [
+  'https://hoppscotch.io',
+  'https://web.postman.co',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
+const envOrigins = (process.env.FRONTEND_URL || '')
   .split(',')
   .map((item) => item.trim())
   .filter(Boolean);
+
+const corsOrigins = [...new Set([...defaultAllowedOrigins, ...envOrigins])];
 
 app.set('trust proxy', 1);
 app.use(
@@ -36,7 +45,12 @@ app.use(
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || corsOrigins.length === 0 || corsOrigins.includes(origin)) {
+      if (
+        !origin ||
+        corsOrigins.includes(origin) ||
+        origin.endsWith('.hoppscotch.io') ||
+        origin.endsWith('.vercel.app')
+      ) {
         callback(null, true);
         return;
       }
