@@ -95,6 +95,22 @@ Since college lab PCs typically do not have Docker Desktop installed, you have *
      ```
      It will return `{"success": true, "message": "Certified backend is healthy."}`!
 
+* **🖥️ How to Show the GUI in Experiment 10 (Instead of Just Curl):**
+  1. **Visual Docker Service Dashboard GUI:**
+     * Open `https://truecert-backend.onrender.com/` (or `http://localhost:5000/` in Codespaces).
+     * **Result:** It renders a visual web dashboard showing:
+       * 🟢 **Container Status: Active & Operational**
+       * **Architecture:** Docker (Node.js 20 Alpine)
+       * **WebSockets:** Socket.IO Enabled
+       * **Health Check:** HTTP 200 OK
+       * Clickable links to live `/health` and `/api/certificates/verify/CERT-1001`.
+  2. **Codespaces Port Forwarding GUI:**
+     * In GitHub Codespaces, click the **"Ports"** tab next to Terminal.
+     * Click the **Globe icon** next to Port `5000`. Codespaces opens a live browser tab rendering the web dashboard!
+  3. **Full React Client GUI connected to Docker:**
+     * In modern microservice DevOps, the backend container runs the REST/WebSocket API on port 5000, and the frontend React application consumes it.
+     * In Codespaces, run `cd frontend && npm run dev`. Codespaces opens Port `5173` displaying the complete interactive React UI (Login, Certificate Issuance, Real-Time Revocation) running directly against your Docker backend!
+
 ---
 
 ## 🧪 Detailed Experiment-by-Experiment Reference
