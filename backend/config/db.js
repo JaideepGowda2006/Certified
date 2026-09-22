@@ -17,9 +17,20 @@ const connectDB = async (retries = 5, delayMs = 2000) => {
     );
   }
 
+  const isSrv = mongoUri.includes('mongodb+srv://');
+  const hasDirectParam = mongoUri.includes('directConnection=');
+  const connectOptions = {
+    serverSelectionTimeoutMS: 5000,
+    ...(isSrv || hasDirectParam ? {} : { directConnection: true }),
+  };
+
+  console.log(
+    `[MongoDB] Connecting to ${mongoUri.replace(/\/\/.*@/, '//<auth>@')} (directConnection: ${connectOptions.directConnection ?? 'url-default'})`,
+  );
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      await mongoose.connect(mongoUri);
+      await mongoose.connect(mongoUri, connectOptions);
       console.log('MongoDB connected successfully.');
       return;
     } catch (err) {
