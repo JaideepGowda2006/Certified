@@ -1,0 +1,60 @@
+# -------------------------------------------------------------
+# Certified - Separate Docker Deployment Setup (Experiment 10)
+# Architecture:
+# Browser -> Frontend Container (Port 3000:80)
+#         -> Backend Container (Port 5000:5000)
+#         -> MongoDB Atlas
+# -------------------------------------------------------------
+
+services:
+  certified-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: certified-backend:docker
+    container_name: certified-backend-docker
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    env_file:
+      - path: .env.docker
+        required: false
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGODB_URI=${MONGODB_URI:-mongodb://127.0.0.1:27017/truecert}
+      - JWT_SECRET=${JWT_SECRET:-certified_docker_jwt_secret_key_minimum_32_characters_123456}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME:-}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000,http://localhost:5173,https://hoppscotch.io}
+      - DEMO_MODE=${DEMO_MODE:-true}
+    networks:
+      - certified-docker-net
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:5000/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  certified-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
+    image: certified-frontend:docker
+    container_name: certified-frontend-docker
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      certified-backend:
+        condition: service_healthy
+    networks:
+      - certified-docker-net
+
+networks:
+  certified-docker-net:
+    driver: bridge
