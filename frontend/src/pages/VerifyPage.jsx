@@ -13,6 +13,7 @@ import api from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import StatusBadge from '../components/StatusBadge'
 import WatermarkOverlay from '../components/WatermarkOverlay'
+import ThemeToggle from '../components/ThemeToggle'
 import { formatDate, formatDateTime } from '../utils/date'
 
 const getOrCreateSessionId = () => {
@@ -104,19 +105,19 @@ const VerifyPage = () => {
     document.addEventListener('keydown', disableCopyShortcuts)
     document.addEventListener('dragstart', disableDragStart)
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    globalThis.addEventListener('beforeprint', lockBeforePrint)
+    window.addEventListener('beforeprint', lockBeforePrint)
 
     return () => {
       document.removeEventListener('contextmenu', disableContextMenu)
       document.removeEventListener('keydown', disableCopyShortcuts)
       document.removeEventListener('dragstart', disableDragStart)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-      globalThis.removeEventListener('beforeprint', lockBeforePrint)
+      window.removeEventListener('beforeprint', lockBeforePrint)
     }
   }, [])
 
   const watermarkText = useMemo(() => {
-    const timestamp = formatDateTime(new Date())
+    const timestamp = new Date().toISOString()
     return `Verified via Certified | ${timestamp} | Session ${sessionId}`
   }, [sessionId])
 
@@ -143,12 +144,12 @@ const VerifyPage = () => {
         id="certificate-id"
         value={lookupId}
         onChange={(event) => setLookupId(event.target.value)}
-        placeholder="Enter certificate ID, e.g. TCX82LM92PQ"
-        className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-brand-600"
+        placeholder="Enter certificate ID, e.g. TCRHAMY558G4C"
+        className="liquid-glass-input min-w-0 flex-1 rounded-2xl px-4 py-3 text-xs outline-none"
       />
       <button
         type="submit"
-        className="rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+        className="liquid-btn-primary rounded-2xl px-6 py-3 text-xs font-bold tracking-wide"
       >
         Verify Certificate
       </button>
@@ -157,37 +158,64 @@ const VerifyPage = () => {
 
   if (!id) {
     return (
-      <div className="min-h-screen px-4 py-10">
-        <div className="mx-auto max-w-3xl space-y-5">
-          <header className="glass-panel rounded-3xl border border-slate-200/70 p-6">
-            <p className="text-xs uppercase tracking-[0.25em] text-brand-700">Public Verification</p>
-            <h1 className="mt-1 text-3xl font-bold text-slate-900">Verify a Certificate</h1>
-            <p className="mt-2 text-sm text-slate-600">Enter a certificate ID to check its authenticity and status.</p>
+      <div className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f] dark:bg-[#000000] dark:text-[#f5f5f7] px-4 py-16 transition-colors duration-300">
+        <div className="mx-auto max-w-2xl space-y-6">
+          <header className="rounded-2xl border border-neutral-200/90 dark:border-neutral-850 bg-white/80 dark:bg-neutral-925/80 p-7 md:p-8 backdrop-blur-xl shadow-apple dark:shadow-apple-dark">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 font-mono text-xs font-bold">
+                  C
+                </div>
+                <p className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">Public Verification</p>
+              </div>
+              <ThemeToggle compact />
+            </div>
+            <h1 className="mt-4 text-2xl font-semibold tracking-tight text-neutral-950 dark:text-white md:text-3xl">Verify a Credential</h1>
+            <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+              Enter any issued credential identification number to validate its cryptographic authenticity, issuance history, and active status.
+            </p>
           </header>
-          <section className="glass-panel rounded-3xl border border-slate-200/70 p-6">
+
+          <section className="rounded-2xl border border-neutral-200/90 dark:border-neutral-850 bg-white/80 dark:bg-neutral-925/80 p-6 md:p-7 backdrop-blur-xl shadow-apple dark:shadow-apple-dark">
             {lookupForm}
-            {error && <p className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>}
+            {error && (
+              <p className="mt-4 rounded-xl border border-rose-300 bg-rose-50/80 dark:bg-rose-950/50 dark:border-rose-800 px-4 py-3 text-xs font-medium text-rose-700 dark:text-rose-300">
+                {error}
+              </p>
+            )}
           </section>
-          <Link to="/dashboard" className="inline-flex text-sm font-semibold text-brand-700 hover:text-brand-800">
-            Back to Dashboard
-          </Link>
+
+          <div className="text-center">
+            <Link to="/dashboard" className="font-mono text-xs text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white underline underline-offset-4">
+              ← Return to Certified Console
+            </Link>
+          </div>
         </div>
       </div>
     )
   }
 
   if (loading) {
-    return <LoadingSpinner label="Validating certificate..." />
+    return <LoadingSpinner label="Validating certificate authenticity..." />
   }
 
   if (error) {
     return (
-      <div className="mx-auto mt-10 max-w-4xl space-y-4 px-4">
-        <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">Certificate Not Found / Invalid Certificate: {error}</p>
-        {lookupForm}
-        <Link to="/dashboard" className="inline-flex text-sm font-semibold text-brand-700 hover:text-brand-800">
-          Back to Dashboard
-        </Link>
+      <div className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f] dark:bg-[#000000] dark:text-[#f5f5f7] px-4 py-16 transition-colors duration-300">
+        <div className="mx-auto max-w-2xl space-y-5">
+          <div className="rounded-2xl border border-rose-300/80 bg-rose-50/90 dark:bg-rose-950/60 dark:border-rose-800 p-5 text-xs font-medium text-rose-800 dark:text-rose-200">
+            <p className="font-semibold text-sm">Certificate Verification Issue</p>
+            <p className="mt-1">{error}</p>
+          </div>
+          <div className="rounded-2xl border border-neutral-200/90 dark:border-neutral-850 bg-white/80 dark:bg-neutral-925/80 p-6 shadow-apple dark:shadow-apple-dark">
+            {lookupForm}
+          </div>
+          <div className="text-center">
+            <Link to="/dashboard" className="font-mono text-xs text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white underline underline-offset-4">
+              ← Return to Certified Console
+            </Link>
+          </div>
+        </div>
       </div>
     )
   }
@@ -231,7 +259,7 @@ const VerifyPage = () => {
           const body = await pdfResponse.json()
           message = body?.message || message
         } catch {
-          // Keep fallback message when response body is not JSON.
+          // Keep fallback message
         }
         throw new Error(message)
       }
@@ -253,209 +281,216 @@ const VerifyPage = () => {
   }
 
   return (
-    <div className="relative secure-no-select min-h-screen overflow-hidden px-4 py-8">
-      <div className="pointer-events-none absolute -left-20 top-6 h-64 w-64 rounded-full bg-brand-200/30 blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 bottom-10 h-72 w-72 rounded-full bg-orange-200/35 blur-3xl" />
-
-      <div className="mx-auto w-full max-w-6xl space-y-6">
-        <header className="glass-panel rounded-3xl border border-slate-200/70 p-5 md:p-6">
+    <div className="secure-no-select min-h-screen bg-[#fbfbfd] text-[#1d1d1f] dark:bg-[#000000] dark:text-[#f5f5f7] px-4 py-8 transition-colors duration-300">
+      <div className="mx-auto w-full max-w-5xl space-y-6">
+        <header className="rounded-2xl border border-neutral-200/90 dark:border-neutral-850 bg-white/80 dark:bg-neutral-925/80 p-5 md:p-6 backdrop-blur-xl shadow-apple dark:shadow-apple-dark">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-brand-700">Public Verification</p>
-              <h1 className="mt-1 text-3xl font-bold text-slate-900 md:text-4xl">Certificate Vault</h1>
-              <p className="mt-2 text-sm text-slate-600">High-trust credential verification with protected PDF access.</p>
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 font-mono text-xs font-bold">
+                C
+              </div>
+              <div>
+                <p className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">Cryptographic Registry</p>
+                <h1 className="text-xl font-semibold tracking-tight text-neutral-950 dark:text-white md:text-2xl">Credential Vault</h1>
+                <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">SHA-256 tamper-proof protocol.</p>
+              </div>
             </div>
-            <Link
-              to="/"
-              className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-            >
-              Back to Certified
-            </Link>
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <Link
+                to="/"
+                className="rounded-full border border-neutral-300 dark:border-neutral-800 bg-transparent px-4 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-300 transition hover:bg-neutral-100 dark:hover:bg-neutral-900"
+              >
+                Home
+              </Link>
+            </div>
           </div>
         </header>
 
-        <section className="glass-panel relative overflow-hidden rounded-[30px] border border-slate-200/75 p-5 md:p-8">
+        <section className="relative overflow-hidden rounded-2xl border border-neutral-200/90 dark:border-neutral-850 bg-white/80 dark:bg-neutral-925/80 p-6 md:p-8 backdrop-blur-xl shadow-apple dark:shadow-apple-dark">
           <WatermarkOverlay text={watermarkText} />
-          <div className="pointer-events-none absolute -right-10 top-8 h-40 w-40 rounded-full bg-brand-100/35 blur-2xl" />
-          <div className="pointer-events-none absolute -left-16 bottom-4 h-48 w-48 rounded-full bg-cyan-100/35 blur-2xl" />
 
           <div className="relative z-10 space-y-6">
             {isSecurityLocked && (
-              <div className="rounded-2xl border border-amber-300 bg-amber-50/95 p-4">
-                <p className="inline-flex items-center gap-2 text-sm font-semibold text-amber-800">
-                  <FaLock /> Security lock is active for this session.
+              <div className="rounded-xl border border-amber-300/80 bg-amber-50/90 dark:bg-amber-950/50 dark:border-amber-800 p-4">
+                <p className="inline-flex items-center gap-2 text-xs font-semibold text-amber-900 dark:text-amber-200">
+                  <FaLock className="text-amber-600 dark:text-amber-400" /> Security lock active for this session
                 </p>
-                <p className="mt-2 text-sm text-amber-800">
-                  Certified automatically locks sensitive data when the tab loses focus or print is invoked.
+                <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
+                  Certified automatically restricts sensitive candidate records when the tab loses focus or print is invoked.
                 </p>
                 <button
                   type="button"
                   onClick={() => setIsSecurityLocked(false)}
-                  className="mt-3 rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white"
+                  className="mt-3 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-3.5 py-1.5 text-xs font-medium"
                 >
                   Unlock Verified View
                 </button>
               </div>
             )}
 
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/90 p-3 md:p-4">
+            {/* Status & ID Banner */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/60 p-4">
               <div className="flex flex-wrap items-center gap-2">
                 {certificate.effectiveStatus === 'revoked' && (
-                  <span className="rounded-full bg-rose-100 px-4 py-2 text-sm font-bold uppercase tracking-wide text-rose-700">
+                  <span className="rounded-full bg-rose-500/10 border border-rose-500/30 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">
                     Revoked Certificate
                   </span>
                 )}
                 {certificate.effectiveStatus === 'expired' && (
-                  <span className="rounded-full bg-amber-100 px-4 py-2 text-sm font-bold uppercase tracking-wide text-amber-700">
+                  <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
                     Expired Certificate
                   </span>
                 )}
                 {certificate.effectiveStatus === 'active' && (
-                  <span className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold uppercase tracking-wide text-emerald-700">
-                    Verified Active Certificate
+                  <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                    Verified Active
                   </span>
                 )}
                 <StatusBadge status={certificate.effectiveStatus} />
               </div>
-              <div className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white">
+              <div className="font-mono text-xs font-bold tracking-wider text-neutral-800 dark:text-neutral-200">
                 ID: {certificate.certificateId}
               </div>
             </div>
 
+            {/* Revoked Notice if applicable */}
             {(certificate.effectiveStatus === 'revoked' || certificate.status === 'revoked') && (
-              <div className="rounded-2xl border border-rose-300 bg-rose-50/90 p-4 text-rose-900 shadow-sm">
-                <div className="flex items-center gap-2 font-bold text-rose-800">
-                  <FaExclamationTriangle className="text-rose-600 text-lg" />
-                  <span>This Certificate Was Revoked</span>
+              <div className="rounded-xl border border-rose-300/80 bg-rose-50/95 dark:bg-rose-950/60 dark:border-rose-800 p-4 text-rose-900 dark:text-rose-200">
+                <div className="flex items-center gap-2 font-semibold text-rose-800 dark:text-rose-300 text-xs">
+                  <FaExclamationTriangle className="text-rose-600 dark:text-rose-400 text-base" />
+                  <span>Credential Revocation Notice</span>
                 </div>
-                <p className="mt-2 text-sm text-rose-700">
-                  <span className="font-semibold">Reason for Revocation:</span>{' '}
+                <p className="mt-2 text-xs text-rose-700 dark:text-rose-300">
+                  <span className="font-semibold">Official Reason:</span>{' '}
                   {certificate.revocationReason || 'Revoked by issuing authority'}
                 </p>
                 {certificate.revokedAt && (
-                  <p className="mt-1 text-xs text-rose-500">
-                    Effective from: {formatDateTime(certificate.revokedAt)}
+                  <p className="mt-1 font-mono text-[10px] text-rose-500 dark:text-rose-400">
+                    Timestamp: {formatDateTime(certificate.revokedAt)}
                   </p>
                 )}
               </div>
             )}
 
-            <div className="rounded-2xl border border-slate-200 bg-white/95 p-4">
-              <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
-                <FaShieldAlt className="text-brand-700" /> Hash Verification
+            {/* Hash Verification Pill */}
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/60 p-4">
+              <p className="inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
+                <FaShieldAlt className="text-neutral-700 dark:text-neutral-300 text-xs" /> Cryptographic Integrity Check
               </p>
-              <p className={`mt-2 text-base font-bold ${verification.isAuthentic ? 'text-emerald-700' : 'text-rose-700'}`}>
+              <p className={`mt-1.5 text-xs font-mono font-semibold ${verification.isAuthentic ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
                 {verification.message}
               </p>
             </div>
 
+            {/* Details & QR Grid */}
             <div className={`grid gap-5 md:grid-cols-[1.2fr_0.8fr] security-blur ${canRevealData ? 'revealed' : ''}`}>
-              <article className="space-y-4 rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-soft">
-                <h2 className="text-xl font-semibold text-slate-900">Certificate Details</h2>
-                <div className="grid gap-3 text-sm text-slate-700 md:grid-cols-2">
+              <article className="space-y-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/40 p-5">
+                <h2 className="text-sm font-semibold tracking-tight text-neutral-950 dark:text-white">Credential Metadata</h2>
+                <div className="grid gap-3 text-xs text-neutral-600 dark:text-neutral-300 md:grid-cols-2">
                   <p>
-                    <strong>ID:</strong> {certificate.certificateId}
+                    <strong className="text-neutral-950 dark:text-white font-medium">ID:</strong> {certificate.certificateId}
                   </p>
                   <p>
-                    <strong>Candidate:</strong> {certificate.candidateName}
+                    <strong className="text-neutral-950 dark:text-white font-medium">Candidate:</strong> {certificate.candidateName}
                   </p>
                   <p>
-                    <strong>Title:</strong> {certificate.certificateTitle}
+                    <strong className="text-neutral-950 dark:text-white font-medium">Award Title:</strong> {certificate.certificateTitle}
                   </p>
                   <p>
-                    <strong>Course:</strong> {certificate.courseName}
+                    <strong className="text-neutral-950 dark:text-white font-medium">Course / Program:</strong> {certificate.courseName}
                   </p>
                   <p>
-                    <strong>Issue Date:</strong> {formatDate(certificate.issueDate)}
+                    <strong className="text-neutral-950 dark:text-white font-medium">Issue Date:</strong> {formatDate(certificate.issueDate)}
                   </p>
                   <p>
-                    <strong>Expiry Date:</strong> {formatDate(certificate.expiryDate)}
+                    <strong className="text-neutral-950 dark:text-white font-medium">Expiry Date:</strong> {formatDate(certificate.expiryDate)}
                   </p>
                   <p>
-                    <strong>Issuer:</strong> {certificate.issuerName}
+                    <strong className="text-neutral-950 dark:text-white font-medium">Issuer Authority:</strong> {certificate.issuerName}
                   </p>
                   <p>
-                    <strong>Organization:</strong> {certificate.organization}
+                    <strong className="text-neutral-950 dark:text-white font-medium">Institution:</strong> {certificate.organization}
                   </p>
                 </div>
 
                 {certificate.description && (
-                  <p className="rounded-xl bg-slate-50 p-3 text-sm leading-relaxed text-slate-600">{certificate.description}</p>
+                  <p className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white/60 dark:bg-neutral-925/60 p-3 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
+                    {certificate.description}
+                  </p>
                 )}
               </article>
 
-              <article className="space-y-4 rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-soft">
-                <h2 className="text-xl font-semibold text-slate-900">Artifacts</h2>
+              <article className="space-y-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/40 p-5">
+                <h2 className="text-sm font-semibold tracking-tight text-neutral-950 dark:text-white">Official Artifacts</h2>
                 {certificate.qrUrl && (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                      <FaQrcode /> Verification QR
+                  <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-925 p-4 text-center">
+                    <p className="mb-3 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                      <FaQrcode className="text-xs" /> Tamper-Proof QR Link
                     </p>
                     <img
                       src={certificate.qrUrl}
                       alt="Certificate QR"
                       draggable="false"
-                      className="mx-auto rounded-xl border border-slate-200 bg-white p-2"
+                      className="mx-auto rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white p-2 max-w-[140px]"
                     />
                   </div>
                 )}
 
-                <div className="grid gap-3">
+                <div className="grid gap-2">
                   <button
                     type="button"
                     onClick={handleDownloadPdf}
                     disabled={isDownloadingPdf || !certificate?.pdfAccessUrl}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-500"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 py-2.5 text-center text-xs font-semibold transition hover:opacity-90 disabled:opacity-50"
                   >
-                    <FaDownload className="text-sm" />
-                    {isDownloadingPdf ? 'Preparing PDF...' : 'Download Certificate PDF'}
+                    <FaDownload className="text-xs" />
+                    {isDownloadingPdf ? 'Generating PDF...' : 'Download Certificate PDF'}
                   </button>
                   <Link
                     to={`/verify/${certificate.certificateId}/pdf?sessionId=${encodeURIComponent(sessionId)}`}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-transparent py-2.5 text-center text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-900"
                   >
-                    <FaEye className="text-sm" />
+                    <FaEye className="text-xs" />
                     Open Protected PDF Viewer
                   </Link>
                 </div>
 
-                {downloadError && <p className="text-xs font-semibold text-rose-700">{downloadError}</p>}
+                {downloadError && <p className="text-xs font-medium text-rose-700 dark:text-rose-400">{downloadError}</p>}
               </article>
             </div>
 
-            <div className="rounded-2xl border border-brand-200 bg-brand-50/80 p-4 md:p-5">
-              <h3 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-brand-800">
-                <FaShieldAlt /> Security Shield Enabled
+            {/* Privacy Shield Notice */}
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/60 p-4">
+              <h3 className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
+                <FaShieldAlt className="text-xs" /> Active Security Shield
               </h3>
-              <p className="mt-2 text-sm text-brand-800">
-                Dynamic watermark overlays this view with timestamp and session ID. Right-click, copy and print
-                shortcuts are restricted to reduce unauthorized capture.
-              </p>
-              <p className="mt-1 text-xs text-brand-700">
-                PDF access token expires in approximately {verification.pdfTokenExpiresInMinutes || 10} minutes.
+              <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                Dynamic session watermark overlays this view. Screen capture, copy, and print shortcuts are monitored to protect student credential privacy.
               </p>
               {!canRevealData && (
                 <button
                   type="button"
                   onClick={() => setRevealed(true)}
-                  className="mt-3 rounded-lg bg-brand-600 px-4 py-2 text-xs font-semibold text-white"
+                  className="mt-3 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 px-3.5 py-1.5 text-xs font-semibold"
                 >
                   Reveal Verified Data
                 </button>
               )}
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white/95 p-4 md:p-5">
-              <p className="text-sm font-semibold text-slate-700">Share Verification</p>
-              <div className="mt-3 flex items-center gap-2">
+            {/* Social Share */}
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/60 p-4 flex items-center justify-between">
+              <p className="font-mono text-xs text-neutral-600 dark:text-neutral-400">Share Public Verification</p>
+              <div className="flex items-center gap-2">
                 <LinkedinShareButton url={shareUrl} title="Verified certificate on Certified">
-                  <LinkedinIcon size={36} round />
+                  <LinkedinIcon size={28} round />
                 </LinkedinShareButton>
                 <XShareButton url={shareUrl} title="Verified certificate on Certified">
-                  <XIcon size={36} round />
+                  <XIcon size={28} round />
                 </XShareButton>
                 <WhatsappShareButton url={shareUrl} title="Verified certificate on Certified">
-                  <WhatsappIcon size={36} round />
+                  <WhatsappIcon size={28} round />
                 </WhatsappShareButton>
               </div>
             </div>

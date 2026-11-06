@@ -60,7 +60,6 @@ const CertificatesPage = () => {
       const cert = payload?.certificate || payload
       if (!cert?.certificateId) return
 
-      // If viewing as student, only prepend if candidate email matches
       if (!isAdmin && cert.candidateEmail && user?.email) {
         if (cert.candidateEmail.toLowerCase() !== user.email.toLowerCase()) {
           return
@@ -81,6 +80,8 @@ const CertificatesPage = () => {
     const handleRevoked = (payload) => {
       const cert = payload?.certificate || payload
       const id = cert?.certificateId || payload?.certificateId
+      const reason = payload?.reason || cert?.revocationReason || 'Revoked by authority'
+      const revokedAt = payload?.revokedAt || new Date().toISOString()
       if (!id) return
       setCertificates((prev) =>
         prev.map((c) =>
@@ -89,8 +90,8 @@ const CertificatesPage = () => {
                 ...c,
                 status: 'revoked',
                 effectiveStatus: 'revoked',
-                revocationReason: cert?.revocationReason || payload?.revocationReason || 'Revoked via real-time update',
-                revokedAt: cert?.revokedAt || new Date().toISOString(),
+                revocationReason: reason,
+                revokedAt,
               }
             : c,
         ),
@@ -217,43 +218,52 @@ const CertificatesPage = () => {
   const hasCertificates = certificates.length > 0
 
   return (
-    <div className="space-y-5">
-      <div>
-        <p className="text-xs uppercase tracking-[0.22em] text-brand-700">Certificate Registry</p>
-        <h1 className="text-3xl font-bold text-slate-900">Issued Certificates</h1>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-indigo-600 dark:text-cyan-400">Certificate Registry</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-3xl">Issued Credentials</h1>
+        </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+          {isAdmin ? 'Manage repository, revocation & status telemetry' : 'Your personal verified credentials vault'}
+        </p>
       </div>
 
-      <section className="glass-panel rounded-2xl p-4 md:p-5">
+      <section className="liquid-glass rounded-3xl p-5 md:p-6 shadow-sm">
         <form onSubmit={onSearch} className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-[220px] flex-1">
-            <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <div className="relative min-w-[240px] flex-1">
+            <FaSearch className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search by ID, candidate, or title"
-              className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 outline-none transition focus:border-brand-600"
+              placeholder="Search by ID, candidate name, or credential title..."
+              className="liquid-glass-input w-full rounded-2xl py-2.5 pl-10 pr-4 text-xs outline-none"
             />
           </div>
           <button
             type="submit"
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+            className="liquid-btn-secondary rounded-2xl px-5 py-2.5 text-xs font-bold"
           >
-            Search
+            Search Registry
           </button>
         </form>
 
-        {error && <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">{error}</p>}
+        {error && (
+          <p className="mt-4 rounded-xl border border-rose-300 bg-rose-50/80 dark:bg-rose-950/50 px-3.5 py-2 text-xs font-semibold text-rose-700 dark:text-rose-300">
+            {error}
+          </p>
+        )}
 
         {hasCertificates ? (
-          <div className="mt-5 overflow-x-auto">
-            <table className="min-w-full border-separate border-spacing-y-2 text-sm">
+          <div className="mt-6 overflow-x-auto">
+            <table className="min-w-full border-separate border-spacing-y-2.5 text-xs">
               <thead>
-                <tr className="text-left text-xs uppercase tracking-wider text-slate-500">
-                  <th className="px-3 py-2">Certificate</th>
-                  <th className="px-3 py-2">Candidate</th>
-                  <th className="px-3 py-2">Issued</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Actions</th>
+                <tr className="text-left text-[10px] uppercase tracking-wider text-slate-400">
+                  <th className="px-4 py-2 font-bold">Credential Info</th>
+                  <th className="px-4 py-2 font-bold">Candidate</th>
+                  <th className="px-4 py-2 font-bold">Issued Date</th>
+                  <th className="px-4 py-2 font-bold">Status</th>
+                  <th className="px-4 py-2 font-bold text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -261,44 +271,46 @@ const CertificatesPage = () => {
                   const isRevoked = certificate.status === 'revoked' || certificate.effectiveStatus === 'revoked'
 
                   return (
-                    <tr key={certificate.certificateId} className="rounded-xl bg-white shadow-sm">
-                      <td className="rounded-l-xl px-3 py-3">
-                        <p className="font-semibold text-slate-800">{certificate.certificateTitle}</p>
-                        <p className="text-xs text-slate-500">{certificate.certificateId}</p>
+                    <tr key={certificate.certificateId} className="liquid-glass-subtle group transition hover:bg-white/90 dark:hover:bg-slate-800/80">
+                      <td className="rounded-l-2xl px-4 py-3.5 border-y border-l border-white/80 dark:border-white/10">
+                        <p className="font-bold text-slate-900 dark:text-white">{certificate.certificateTitle}</p>
+                        <p className="mt-0.5 font-mono text-[10px] text-indigo-600 dark:text-cyan-400 font-semibold">{certificate.certificateId}</p>
 
                         {isRevoked && (
-                          <div className="mt-2 flex flex-col gap-1 rounded-lg border border-rose-200 bg-rose-50/90 p-2 text-xs text-rose-800">
-                            <div className="flex items-center gap-1.5 font-bold text-rose-900">
-                              <FaExclamationTriangle className="text-rose-600" />
-                              <span>Reason for Revocation:</span>
+                          <div className="mt-2.5 flex flex-col gap-1 rounded-xl border border-rose-300/80 dark:border-rose-800 bg-rose-50/90 dark:bg-rose-950/60 p-2.5 text-[11px] text-rose-900 dark:text-rose-200">
+                            <div className="flex items-center gap-1.5 font-bold text-rose-800 dark:text-rose-300">
+                              <FaExclamationTriangle className="text-rose-600 dark:text-rose-400 shrink-0" />
+                              <span>Revocation Notice:</span>
                             </div>
-                            <p className="text-rose-700 italic">
+                            <p className="text-rose-700 dark:text-rose-300 italic">
                               "{certificate.revocationReason || 'Revoked by authority'}"
                             </p>
                             {certificate.revokedAt && (
-                              <p className="text-[10px] text-rose-500">
+                              <p className="text-[9px] text-rose-500 dark:text-rose-400 font-medium">
                                 Revoked on: {formatDate(certificate.revokedAt)}
                               </p>
                             )}
                           </div>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-slate-700">
-                        <p className="font-medium text-slate-800">{certificate.candidateName}</p>
+                      <td className="px-4 py-3.5 border-y border-white/80 dark:border-white/10 text-slate-700 dark:text-slate-300">
+                        <p className="font-bold text-slate-900 dark:text-white">{certificate.candidateName}</p>
                         {certificate.candidateEmail && (
-                          <p className="text-xs text-slate-500">{certificate.candidateEmail}</p>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400">{certificate.candidateEmail}</p>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-slate-700">{formatDate(certificate.issueDate)}</td>
-                      <td className="px-3 py-3">
+                      <td className="px-4 py-3.5 border-y border-white/80 dark:border-white/10 text-slate-600 dark:text-slate-300 font-medium">
+                        {formatDate(certificate.issueDate)}
+                      </td>
+                      <td className="px-4 py-3.5 border-y border-white/80 dark:border-white/10">
                         <StatusBadge status={certificate.effectiveStatus || certificate.status} />
                       </td>
-                      <td className="rounded-r-xl px-3 py-3">
-                        <div className="flex flex-wrap gap-2">
+                      <td className="rounded-r-2xl px-4 py-3.5 border-y border-r border-white/80 dark:border-white/10 text-right">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             type="button"
                             onClick={() => window.open(`/verify/${certificate.certificateId}`, '_blank')}
-                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                            className="liquid-btn-secondary rounded-xl px-3 py-1.5 text-[11px] font-bold"
                           >
                             Verify
                           </button>
@@ -310,7 +322,7 @@ const CertificatesPage = () => {
                                   type="button"
                                   onClick={() => openRevokeModal(certificate)}
                                   disabled={revokingId === certificate.certificateId}
-                                  className="rounded-lg border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed"
+                                  className="rounded-xl border border-rose-300/80 bg-rose-50/80 dark:bg-rose-950/60 dark:border-rose-800 px-3 py-1.5 text-[11px] font-bold text-rose-700 dark:text-rose-300 transition hover:bg-rose-100 disabled:opacity-50"
                                 >
                                   {revokingId === certificate.certificateId ? 'Revoking...' : 'Revoke'}
                                 </button>
@@ -319,10 +331,10 @@ const CertificatesPage = () => {
                                   type="button"
                                   onClick={() => onUnrevoke(certificate.certificateId)}
                                   disabled={unrevokingId === certificate.certificateId}
-                                  className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed shadow-sm"
+                                  className="inline-flex items-center gap-1 rounded-xl border border-emerald-300/80 bg-emerald-50/80 dark:bg-emerald-950/60 dark:border-emerald-800 px-3 py-1.5 text-[11px] font-bold text-emerald-800 dark:text-emerald-300 transition hover:bg-emerald-100 disabled:opacity-50 shadow-xs"
                                   title="Reinstate this certificate to active status"
                                 >
-                                  <FaUndo className="text-[10px]" />
+                                  <FaUndo className="text-[9px]" />
                                   {unrevokingId === certificate.certificateId ? 'Reinstating...' : 'Unrevoke'}
                                 </button>
                               )}
@@ -337,55 +349,55 @@ const CertificatesPage = () => {
             </table>
           </div>
         ) : (
-          <p className="mt-5 text-sm text-slate-600">No certificates found.</p>
+          <p className="mt-6 text-xs text-slate-500 dark:text-slate-400">No certificates matching query found.</p>
         )}
       </section>
 
-      {/* Revocation Reason Modal Dialog */}
+      {/* Revocation Reason Modal Dialog with Liquid Glass */}
       {revokeModalOpen && targetCert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <div className="flex items-center gap-2 text-rose-700">
-                <FaExclamationTriangle className="text-xl" />
-                <h3 className="text-lg font-bold text-slate-900">Revoke Certificate</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-md p-4">
+          <div className="liquid-glass w-full max-w-lg rounded-3xl p-6 md:p-7 shadow-2xl border border-white/90 dark:border-white/10">
+            <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-white/10 pb-3">
+              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                <FaExclamationTriangle className="text-lg" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Revoke Certificate</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setRevokeModalOpen(false)}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200"
               >
                 <FaTimes />
               </button>
             </div>
 
             <div className="mt-4 space-y-4">
-              <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
+              <div className="liquid-glass-subtle rounded-2xl p-3.5 text-xs text-slate-600 dark:text-slate-300 border border-white/80 dark:border-white/10">
                 <p>
-                  <span className="font-semibold text-slate-800">Certificate:</span>{' '}
+                  <span className="font-bold text-slate-800 dark:text-white">Certificate:</span>{' '}
                   {targetCert.certificateTitle} ({targetCert.certificateId})
                 </p>
                 <p className="mt-1">
-                  <span className="font-semibold text-slate-800">Candidate:</span>{' '}
+                  <span className="font-bold text-slate-800 dark:text-white">Candidate:</span>{' '}
                   {targetCert.candidateName} {targetCert.candidateEmail ? `(${targetCert.candidateEmail})` : ''}
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   Select Reason for Revocation <span className="text-rose-500">*</span>
                 </label>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  This reason will be visible to the student and anyone verifying the certificate.
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  This reason will be visible to the candidate and public verification scanners.
                 </p>
-                <div className="mt-2 space-y-2">
+                <div className="mt-2.5 space-y-2">
                   {PRESET_REASONS.map((reason) => (
                     <label
                       key={reason}
                       className={`flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 text-xs transition ${
                         selectedReason === reason
-                          ? 'border-rose-400 bg-rose-50/60 font-semibold text-rose-950'
-                          : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                          ? 'border-rose-400 bg-rose-50/70 dark:bg-rose-950/70 font-bold text-rose-950 dark:text-rose-200 shadow-xs'
+                          : 'border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                       }`}
                     >
                       <input
@@ -404,7 +416,7 @@ const CertificatesPage = () => {
 
               {selectedReason === 'Other (Specify Below)' && (
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     Custom Reason Description <span className="text-rose-500">*</span>
                   </label>
                   <textarea
@@ -412,17 +424,17 @@ const CertificatesPage = () => {
                     value={customReason}
                     onChange={(e) => setCustomReason(e.target.value)}
                     placeholder="Enter detailed reason for certificate revocation..."
-                    className="mt-1.5 w-full rounded-xl border border-slate-300 p-3 text-xs text-slate-800 outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                    className="liquid-glass-input mt-1.5 w-full rounded-2xl p-3 text-xs outline-none"
                   />
                 </div>
               )}
             </div>
 
-            <div className="mt-6 flex items-center justify-end gap-3 border-t border-slate-200 pt-4">
+            <div className="mt-6 flex items-center justify-end gap-3 border-t border-slate-200/60 dark:border-white/10 pt-4">
               <button
                 type="button"
                 onClick={() => setRevokeModalOpen(false)}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="liquid-btn-secondary rounded-xl px-4 py-2 text-xs font-bold"
               >
                 Cancel
               </button>
@@ -430,7 +442,7 @@ const CertificatesPage = () => {
                 type="button"
                 onClick={handleConfirmRevoke}
                 disabled={Boolean(revokingId)}
-                className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-rose-700 disabled:opacity-50"
+                className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-rose-600/20 hover:bg-rose-700 disabled:opacity-50"
               >
                 {revokingId ? 'Revoking...' : 'Confirm Revocation'}
               </button>

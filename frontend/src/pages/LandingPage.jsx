@@ -1,63 +1,49 @@
+import { useState } from 'react'
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
-import { FaCheckCircle, FaGlobe, FaQrcode, FaShieldAlt } from 'react-icons/fa'
+import { Link, useNavigate } from 'react-router-dom'
+import {
+  FaArrowRight,
+  FaCheckCircle,
+  FaChartLine,
+  FaFingerprint,
+  FaHistory,
+  FaLock,
+  FaQrcode,
+  FaSearch,
+  FaShieldAlt,
+} from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
+import ThemeToggle from '../components/ThemeToggle'
 
-const featureCards = [
+const systemCapabilities = [
   {
-    icon: FaShieldAlt,
-    title: 'Tamper-Resistant Credentials',
+    index: '01',
+    icon: FaFingerprint,
+    title: 'SHA-256 Cryptography',
     description:
-      'Each certificate stores a SHA-256 signature, secure PDF artifact, and immutable verification history.',
+      'Every credential generates an immutable SHA-256 digital signature, ensuring mathematically verifiable tamper detection.',
   },
   {
+    index: '02',
     icon: FaQrcode,
-    title: 'Instant QR Verification',
+    title: 'Instant QR Validation',
     description:
-      'Every issued credential generates a unique QR destination for one-click public authenticity checks.',
+      'Direct-to-vault QR routing allows any smartphone or scanner to verify credential status, issuer, and date in milliseconds.',
   },
   {
-    icon: FaGlobe,
-    title: 'Public Trust Portal',
+    index: '03',
+    icon: FaHistory,
+    title: 'Status & Revocation Logs',
     description:
-      'Employers and institutions can verify certificate status, expiry, and revocation in seconds.',
+      'Instantaneous active, expired, and revoked state tracking with transparent authoritative audit reasons.',
   },
   {
-    icon: FaCheckCircle,
-    title: 'Issuer Analytics',
+    index: '04',
+    icon: FaChartLine,
+    title: 'Verification Telemetry',
     description:
-      'Monitor scan activity, top-performing certificates, and verification traffic from one dashboard.',
-  },
-]
-
-const trustedLogos = [
-  'Arbor University',
-  'Northbridge Institute',
-  'Acumen Labs',
-  'BluePeak Systems',
-  'Atlas Bootcamp',
-]
-
-const plans = [
-  {
-    name: 'Starter',
-    price: '$29',
-    subtitle: 'For training centers',
-    bullets: ['Up to 500 certificates/month', 'QR verification', 'PDF generation'],
-  },
-  {
-    name: 'Growth',
-    price: '$99',
-    subtitle: 'For universities and teams',
-    bullets: ['Unlimited certificates', 'Custom branding', 'Scan analytics + revocation'],
-    highlighted: true,
-  },
-  {
-    name: 'Enterprise',
-    price: 'Custom',
-    subtitle: 'For large organizations',
-    bullets: ['SSO and role controls', 'Audit export APIs', 'Dedicated onboarding'],
+      'Audited scan analytics capturing client platform, geographic origin, and timestamp access logs.',
   },
 ]
 
@@ -65,195 +51,365 @@ const staggerParent = {
   hidden: {},
   visible: {
     transition: {
-      staggerChildren: 0.1,
+      staggerChildren: 0.08,
     },
   },
 }
 
 const staggerChild = {
-  hidden: { opacity: 0, y: 22 },
-  visible: { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 }
 
 const LandingPage = () => {
+  const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
+  const [lookupId, setLookupId] = useState('')
+  const [activeTab, setActiveTab] = useState('crypto')
+  const [isSimulating, setIsSimulating] = useState(false)
+  const [simulatedResult, setSimulatedResult] = useState(null)
+
+  const handleLookup = (e) => {
+    e.preventDefault()
+    const trimmed = lookupId.trim()
+    if (trimmed) {
+      navigate(`/verify/${encodeURIComponent(trimmed)}`)
+    } else {
+      navigate('/verify')
+    }
+  }
+
+  const runSimulation = () => {
+    setIsSimulating(true)
+    setSimulatedResult(null)
+    setTimeout(() => {
+      setIsSimulating(false)
+      setSimulatedResult({
+        status: 'valid',
+        timestamp: new Date().toISOString(),
+        blockHash: '7c8d9e2f...1a4b',
+      })
+    }, 600)
+  }
 
   return (
-    <div className="min-h-screen">
-      <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-6 md:px-6">
-        <div>
-          <p className="text-xs uppercase tracking-[0.28em] text-brand-700">Certified</p>
-          <h1 className="text-2xl font-bold text-slate-900">Trust Every Credential</h1>
-        </div>
+    <div className="relative min-h-screen overflow-x-hidden bg-[#f8f9fc] text-[#1d1d1f] dark:bg-[#07070a] dark:text-[#f5f5f7] transition-colors duration-300">
+      {/* Liquid Glass Ambient Refraction Shafts (Provides lighting for glass refraction) */}
+      <div className="liquid-ambient-shaft -top-36 -left-36 h-[500px] w-[500px] bg-blue-600/25 dark:bg-blue-600/20 animate-liquid-float" />
+      <div className="liquid-ambient-shaft top-16 -right-36 h-[600px] w-[600px] bg-indigo-600/25 dark:bg-indigo-600/20 animate-liquid-float-rev" />
+      <div className="liquid-ambient-shaft top-[55%] left-1/4 h-[480px] w-[480px] bg-cyan-500/20 dark:bg-cyan-500/15 animate-liquid-float" />
 
-        <div className="flex items-center gap-3">
-          <Link
-            to="/verify/TCX82LM92PQ"
-            className="hidden rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 md:inline-flex"
-          >
-            View Demo Verify
-          </Link>
-          <Link
-            to={isAuthenticated ? '/dashboard' : '/login'}
-            className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
-          >
-            {isAuthenticated ? 'Open Dashboard' : 'Admin Login'}
-          </Link>
+      {/* Apple Dynamic Island Floating Liquid Header */}
+      <header className="sticky top-4 z-40 mx-auto max-w-4xl px-4 pt-2">
+        <div className="apple-island-dock rounded-full px-5 py-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 font-mono text-xs font-bold tracking-tighter shadow-xs">
+              C
+            </div>
+            <span className="font-mono text-xs font-bold tracking-[0.2em] uppercase text-neutral-900 dark:text-white">
+              Certified
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link
+              to="/verify/TCRHAMY558G4C"
+              className="hidden rounded-full border border-neutral-300/80 dark:border-neutral-700/80 bg-white/40 dark:bg-white/5 px-3.5 py-1 text-xs font-medium text-neutral-700 dark:text-neutral-300 transition hover:bg-white/80 dark:hover:bg-white/10 md:inline-flex"
+            >
+              Sample Specimen
+            </Link>
+            <Link
+              to={isAuthenticated ? '/dashboard' : '/login'}
+              className="liquid-btn-primary rounded-full px-4 py-1.5 text-xs font-semibold"
+            >
+              {isAuthenticated ? 'Console' : 'Sign In'}
+            </Link>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl px-4 pb-12 md:px-6">
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55 }}
-          className="glass-panel relative overflow-hidden rounded-3xl p-7 md:p-12"
-        >
-          <div className="absolute -right-16 -top-20 h-52 w-52 rounded-full bg-orange-300/30 blur-2xl" />
-          <div className="absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-teal-300/30 blur-2xl" />
+      <main className="relative z-10 mx-auto max-w-5xl px-6 pt-12 pb-24 md:pt-20">
+        {/* Editorial Hero Section */}
+        <section className="text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200/90 dark:border-white/10 bg-white/60 dark:bg-white/5 px-3.5 py-1 text-[11px] font-mono font-medium text-neutral-600 dark:text-neutral-400 backdrop-blur-md shadow-xs">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>ACADEMIC CREDENTIAL PROTOCOL</span>
+          </div>
 
-          <div className="relative grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-            <div>
-              <p className="mb-4 inline-flex rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-brand-700">
-                Secure Certificate Verification Platform
-              </p>
-              <h2 className="text-4xl font-bold leading-tight text-slate-900 md:text-5xl">
-                Issue, secure, and verify certificates with confidence.
-              </h2>
-              <p className="mt-5 max-w-2xl text-base leading-relaxed text-slate-600 md:text-lg">
-                Certified helps colleges, companies, and institutes issue QR-based digital credentials with
-                tamper detection, revocation controls, and public verification workflows.
-              </p>
+          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-neutral-950 dark:text-white sm:text-6xl md:text-7xl md:leading-[1.08]">
+            Authentic by design.
+            <br />
+            <span className="text-neutral-400 dark:text-neutral-500">Verified everywhere.</span>
+          </h1>
 
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Link
-                  to={isAuthenticated ? '/create-certificate' : '/login'}
-                  className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                >
-                  Start Issuing Certificates
-                </Link>
-                <Link
-                  to="/verify/TCX82LM92PQ"
-                  className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
-                  Verify Public Certificate
-                </Link>
-              </div>
-            </div>
+          <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-neutral-600 dark:text-neutral-400 md:text-lg font-normal">
+            An immutable cryptographic registry for academic degrees, professional credentials, and institutional records.
+          </p>
 
-            <div className="glass-panel rounded-2xl border border-slate-200/70 bg-white/90 p-5">
-              <p className="text-sm font-semibold text-brand-700">Live Product Snapshot</p>
-              <div className="mt-4 space-y-3">
-                {[
-                  'Certificate ID generated automatically',
-                  'Secure QR URL mapped to verification route',
-                  'Professional PDF generated and uploaded',
-                  'Public scan analytics tracked in real time',
-                ].map((item) => (
-                  <div key={item} className="flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-sm text-slate-700">
-                    <FaCheckCircle className="mt-0.5 text-brand-600" />
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
+          {/* Apple Spotlight Style Liquid Glass Search */}
+          <div className="mx-auto mt-10 max-w-xl">
+            <form
+              onSubmit={handleLookup}
+              className="group relative flex items-center rounded-2xl apple-liquid-glass p-2 transition-all focus-within:border-blue-500 dark:focus-within:border-white focus-within:ring-4 focus-within:ring-blue-500/15"
+            >
+              <FaSearch className="ml-3.5 text-neutral-400 dark:text-neutral-500 text-sm" />
+              <input
+                type="text"
+                value={lookupId}
+                onChange={(e) => setLookupId(e.target.value)}
+                placeholder="Enter Certificate ID, e.g. TCRHAMY558G4C"
+                className="w-full bg-transparent px-3.5 py-2.5 text-sm text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none"
+              />
+              <button
+                type="submit"
+                className="liquid-btn-primary inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-semibold shrink-0"
+              >
+                <span>Verify</span>
+                <FaArrowRight className="text-[10px]" />
+              </button>
+            </form>
+
+            <div className="mt-3.5 flex items-center justify-center gap-2 text-xs text-neutral-500">
+              <span className="font-mono text-[11px]">SPECIMENS:</span>
+              <button
+                type="button"
+                onClick={() => navigate('/verify/TCRHAMY558G4C')}
+                className="font-mono text-neutral-900 dark:text-neutral-300 underline decoration-neutral-300 dark:decoration-neutral-700 underline-offset-4 hover:text-black dark:hover:text-white"
+              >
+                TCRHAMY558G4C
+              </button>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={() => navigate('/verify/TC5X5G3UZHCEB')}
+                className="font-mono text-neutral-900 dark:text-neutral-300 underline decoration-neutral-300 dark:decoration-neutral-700 underline-offset-4 hover:text-black dark:hover:text-white"
+              >
+                TC5X5G3UZHCEB
+              </button>
             </div>
           </div>
-        </motion.section>
+        </section>
 
-        <motion.section
-          variants={staggerParent}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          className="mt-10"
-        >
-          <h3 className="mb-5 text-2xl font-bold text-slate-900 md:text-3xl">Platform Features</h3>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {featureCards.map((card) => {
-              const Icon = card.icon
+        {/* Apple Hardware-Style Liquid Glass Interactive Specimen */}
+        <section className="mt-16">
+          <div className="apple-liquid-card overflow-hidden rounded-3xl p-6 md:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-black/[0.06] dark:border-white/[0.08]">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 font-mono text-xs font-bold shadow-xs">
+                  <FaShieldAlt className="text-sm" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                      LIVE SPECIMEN
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 font-mono text-[9px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      ACTIVE VAULT
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-neutral-900 dark:text-white mt-0.5">
+                    Master of Science in Distributed Systems
+                  </h3>
+                </div>
+              </div>
+
+              {/* Specimen Interactive Switcher */}
+              <div className="flex rounded-xl bg-black/[0.04] dark:bg-white/[0.06] p-1 border border-black/[0.04] dark:border-white/[0.06]">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('crypto')}
+                  className={`rounded-lg px-3 py-1 font-mono text-[11px] font-medium transition ${
+                    activeTab === 'crypto'
+                      ? 'bg-white dark:bg-neutral-850 text-neutral-900 dark:text-white shadow-xs'
+                      : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
+                >
+                  Cryptography
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('metadata')}
+                  className={`rounded-lg px-3 py-1 font-mono text-[11px] font-medium transition ${
+                    activeTab === 'metadata'
+                      ? 'bg-white dark:bg-neutral-850 text-neutral-900 dark:text-white shadow-xs'
+                      : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
+                >
+                  Metadata
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('qr')}
+                  className={`rounded-lg px-3 py-1 font-mono text-[11px] font-medium transition ${
+                    activeTab === 'qr'
+                      ? 'bg-white dark:bg-neutral-850 text-neutral-900 dark:text-white shadow-xs'
+                      : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
+                >
+                  QR Routing
+                </button>
+              </div>
+            </div>
+
+            {/* Specimen Body */}
+            <div className="pt-6">
+              {activeTab === 'crypto' && (
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-black/[0.06] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.02] p-4">
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-400">
+                      SHA-256 Digest Signature
+                    </p>
+                    <p className="mt-1 font-mono text-xs text-neutral-800 dark:text-neutral-200 break-all select-all">
+                      e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={runSimulation}
+                        disabled={isSimulating}
+                        className="liquid-btn-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 font-mono text-xs font-semibold disabled:opacity-50"
+                      >
+                        <FaLock className="text-[10px]" />
+                        <span>{isSimulating ? 'Validating Hash...' : 'Test Hash Verification'}</span>
+                      </button>
+
+                      {simulatedResult && (
+                        <span className="inline-flex items-center gap-1.5 font-mono text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                          <FaCheckCircle className="text-xs" />
+                          <span>Tamper Check Passed</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <Link
+                      to="/verify/TCRHAMY558G4C"
+                      className="font-mono text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-white underline underline-offset-4"
+                    >
+                      Open Full Verification Certificate →
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'metadata' && (
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 font-mono text-xs">
+                  <div className="rounded-xl border border-black/[0.06] dark:border-white/[0.08] p-3.5 bg-black/[0.02] dark:bg-white/[0.02]">
+                    <span className="text-[10px] text-neutral-400 uppercase">Candidate</span>
+                    <p className="mt-1 font-semibold text-neutral-900 dark:text-white">Alex Morgan</p>
+                  </div>
+                  <div className="rounded-xl border border-black/[0.06] dark:border-white/[0.08] p-3.5 bg-black/[0.02] dark:bg-white/[0.02]">
+                    <span className="text-[10px] text-neutral-400 uppercase">Issuing Institute</span>
+                    <p className="mt-1 font-semibold text-neutral-900 dark:text-white">Global University</p>
+                  </div>
+                  <div className="rounded-xl border border-black/[0.06] dark:border-white/[0.08] p-3.5 bg-black/[0.02] dark:bg-white/[0.02]">
+                    <span className="text-[10px] text-neutral-400 uppercase">Date of Registry</span>
+                    <p className="mt-1 font-semibold text-neutral-900 dark:text-white">October 24, 2026</p>
+                  </div>
+                  <div className="rounded-xl border border-black/[0.06] dark:border-white/[0.08] p-3.5 bg-black/[0.02] dark:bg-white/[0.02]">
+                    <span className="text-[10px] text-neutral-400 uppercase">Status</span>
+                    <p className="mt-1 font-semibold text-emerald-600 dark:text-emerald-400">Authentic</p>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'qr' && (
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                  <div className="rounded-2xl border border-black/[0.08] dark:border-white/[0.12] bg-white p-3 shadow-md max-w-[120px]">
+                    <img
+                      src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=http://localhost:5173/verify/TCRHAMY558G4C"
+                      alt="Sample QR"
+                      className="h-24 w-24 object-contain"
+                    />
+                  </div>
+                  <div className="space-y-1.5 text-center sm:text-left">
+                    <p className="font-mono text-xs font-semibold text-neutral-900 dark:text-white">
+                      Instant Smartphone Optical Routing
+                    </p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-md leading-relaxed">
+                      Every physical diploma and PDF artifact encodes an unalterable direct-to-vault URL for instant third-party validation.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Minimal Monolithic Capabilities Grid (Nothing / Sony Style in Liquid Glass) */}
+        <section className="mt-20 border-t border-neutral-200/80 dark:border-neutral-850 pt-16">
+          <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-2">
+            <div>
+              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500">
+                ARCHITECTURE SPECIFICATION
+              </p>
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white">
+                Core System Standards
+              </h2>
+            </div>
+            <p className="font-mono text-xs text-neutral-400 dark:text-neutral-500">
+              V2.4 • SHA-256 HASH VERIFICATION
+            </p>
+          </div>
+
+          <motion.div
+            variants={staggerParent}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.15 }}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            {systemCapabilities.map((cap) => {
+              const Icon = cap.icon
               return (
                 <motion.article
-                  key={card.title}
+                  key={cap.title}
                   variants={staggerChild}
-                  className="glass-panel rounded-2xl p-5 transition hover:-translate-y-1"
+                  className="apple-liquid-card flex flex-col justify-between rounded-2xl p-6"
                 >
-                  <div className="mb-3 inline-flex rounded-lg bg-brand-50 p-3 text-brand-700">
-                    <Icon className="text-lg" />
+                  <div>
+                    <div className="flex items-center justify-between pb-6">
+                      <span className="font-mono text-xs font-bold text-neutral-400 dark:text-neutral-600">
+                        {cap.index}
+                      </span>
+                      <Icon className="text-neutral-600 dark:text-neutral-400 text-sm" />
+                    </div>
+                    <h3 className="text-base font-semibold text-neutral-900 dark:text-white tracking-tight">
+                      {cap.title}
+                    </h3>
+                    <p className="mt-2 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
+                      {cap.description}
+                    </p>
                   </div>
-                  <h4 className="text-lg font-semibold text-slate-900">{card.title}</h4>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{card.description}</p>
                 </motion.article>
               )
             })}
-          </div>
-        </motion.section>
-
-        <section className="mt-12 rounded-3xl border border-slate-200/70 bg-white/80 p-6 md:p-8">
-          <p className="text-center text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">Trusted by</p>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-            {trustedLogos.map((brand) => (
-              <div
-                key={brand}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-sm font-semibold text-slate-700"
-              >
-                {brand}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-12">
-          <h3 className="mb-5 text-2xl font-bold text-slate-900 md:text-3xl">Simple Pricing Preview</h3>
-          <div className="grid gap-4 md:grid-cols-3">
-            {plans.map((plan) => (
-              <article
-                key={plan.name}
-                className={`rounded-2xl border p-5 ${
-                  plan.highlighted
-                    ? 'border-brand-600 bg-brand-600 text-white shadow-soft'
-                    : 'border-slate-200 bg-white/90 text-slate-900'
-                }`}
-              >
-                <p className="text-sm font-semibold uppercase tracking-wider opacity-85">{plan.name}</p>
-                <p className="mt-2 text-3xl font-bold">{plan.price}</p>
-                <p className={`mt-1 text-sm ${plan.highlighted ? 'text-teal-100' : 'text-slate-600'}`}>{plan.subtitle}</p>
-                <ul className="mt-4 space-y-2 text-sm">
-                  {plan.bullets.map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <FaCheckCircle className="mt-0.5 shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-12 rounded-3xl bg-slate-900 p-8 text-center text-white md:p-12">
-          <h3 className="text-3xl font-bold">Ready to launch trusted credentials?</h3>
-          <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-200 md:text-base">
-            Start issuing branded certificates with secure verification, revocation, and analytics across your organization.
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              to={isAuthenticated ? '/dashboard' : '/login'}
-              className="rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
-            >
-              {isAuthenticated ? 'Open Issuer Dashboard' : 'Get Started'}
-            </Link>
-            <Link
-              to="/verify/TCX82LM92PQ"
-              className="rounded-xl border border-slate-600 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:bg-slate-800"
-            >
-              View Verification Demo
-            </Link>
-          </div>
+          </motion.div>
         </section>
       </main>
 
-      <footer className="border-t border-slate-200/70 px-4 py-6 text-center text-sm text-slate-500">
-        <p>Certified. Secure credential management and public verification for modern institutions.</p>
+      {/* Sony / Apple Minimalist Clean Footer */}
+      <footer className="border-t border-neutral-200/80 dark:border-neutral-850 py-10">
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-6 md:flex-row text-xs text-neutral-500">
+          <div className="flex items-center gap-2">
+            <span className="font-mono font-semibold text-neutral-900 dark:text-neutral-300">CERTIFIED</span>
+            <span>•</span>
+            <span>Cryptographic Academic Credential Architecture</span>
+          </div>
+          <div className="flex items-center gap-4 font-mono text-[11px]">
+            <Link to="/verify" className="hover:text-neutral-900 dark:hover:text-white">
+              Public Lookup
+            </Link>
+            <span>•</span>
+            <Link to="/login" className="hover:text-neutral-900 dark:hover:text-white">
+              Sign In
+            </Link>
+          </div>
+        </div>
       </footer>
     </div>
   )

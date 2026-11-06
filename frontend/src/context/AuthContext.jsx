@@ -5,7 +5,7 @@ import api from '../api/client'
 const AuthContext = createContext(null)
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem('truecert_token') || '')
+  const [token, setToken] = useState(() => (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('demo_token') : '') || localStorage.getItem('truecert_token') || '')
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -22,7 +22,9 @@ export const AuthProvider = ({ children }) => {
   }
 
   const bootstrapAuth = async () => {
-    const storedToken = localStorage.getItem('truecert_token')
+    const queryToken = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('demo_token') : '';
+    if (queryToken) localStorage.setItem('truecert_token', queryToken);
+    const storedToken = queryToken || localStorage.getItem('truecert_token')
 
     if (!storedToken) {
       setLoading(false)

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { FaUserShield, FaUserGraduate, FaBolt } from 'react-icons/fa'
+import { FaUserShield, FaUserGraduate, FaBolt, FaShieldAlt } from 'react-icons/fa'
+import ThemeToggle from '../components/ThemeToggle'
 
 const DEMO_ACCOUNTS = {
   admin: {
@@ -95,47 +96,59 @@ const LoginPage = () => {
   if (loading) {
     submitLabel = 'Please wait...'
   } else if (mode === 'login') {
-    submitLabel = 'Sign In'
+    submitLabel = 'Sign In to Certified'
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-8">
-      <div className="glass-panel w-full max-w-lg rounded-3xl p-6 md:p-8">
-        <div className="mb-6">
-          <p className="text-xs uppercase tracking-[0.26em] text-brand-700">Certified</p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-900">{mode === 'login' ? 'Account Login' : 'Create Account'}</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            {mode === 'login'
-              ? 'Access your portal to verify, manage, or issue certificates.'
-              : 'Register as an Admin or Student to get started.'}
-          </p>
+    <div className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f] dark:bg-[#000000] dark:text-[#f5f5f7] flex items-center justify-center px-4 py-12 transition-colors duration-300">
+      <div className="w-full max-w-md rounded-2xl border border-neutral-200/90 dark:border-neutral-850 bg-white/80 dark:bg-neutral-925/80 backdrop-blur-2xl p-7 md:p-8 shadow-apple dark:shadow-apple-dark">
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 font-mono text-xs font-bold">
+                C
+              </div>
+              <span className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-neutral-900 dark:text-white">Certified</span>
+            </div>
+            <h1 className="mt-4 text-2xl font-semibold tracking-tight text-neutral-950 dark:text-white">
+              {mode === 'login' ? 'Authentication' : 'Register Account'}
+            </h1>
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              {mode === 'login'
+                ? 'Sign in to access your institutional credential console.'
+                : 'Initialize an administrator or candidate account.'}
+            </p>
+          </div>
+
+          <ThemeToggle compact />
         </div>
 
-        {/* DEMO MODE SELECTOR CARDS */}
-        <div className="mb-6 rounded-2xl border border-brand-200/80 bg-gradient-to-br from-brand-50/70 via-white to-slate-50/50 p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-800">
-              <FaBolt className="text-amber-500 animate-pulse" /> 1-Click Demo Login
+        {/* 1-CLICK DEMO MODE SELECTOR CARDS (Apple Passkey / Nothing Style) */}
+        <div className="mb-6 rounded-xl border border-neutral-200/80 dark:border-neutral-850 bg-neutral-50/70 dark:bg-neutral-900/60 p-3.5">
+          <div className="mb-2.5 flex items-center justify-between">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500 dark:text-neutral-400">
+              Quick Demo Access
             </span>
-            <span className="text-[11px] text-slate-500 font-medium">Instant Live Role Switch</span>
+            <span className="font-mono text-[9px] text-emerald-600 dark:text-emerald-400">
+              READY
+            </span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               disabled={loading}
               onClick={() => handleQuickDemoLogin('admin')}
-              className="group flex flex-col items-start rounded-xl border border-slate-200/90 bg-white p-3 text-left transition hover:border-brand-500 hover:shadow-md hover:ring-2 hover:ring-brand-500/20 active:scale-[0.98] disabled:opacity-50"
+              className="flex flex-col items-start rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-925 p-2.5 text-left transition hover:border-neutral-400 dark:hover:border-neutral-600 active:scale-[0.98] disabled:opacity-50"
             >
               <div className="flex w-full items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-900">
-                  <FaUserShield className="text-brand-600" /> Demo Admin
+                <span className="font-mono text-xs font-bold text-neutral-900 dark:text-white">
+                  Admin
                 </span>
-                <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[10px] font-semibold text-brand-800">
-                  demologin.admin
-                </span>
+                <span className="font-mono text-[9px] text-neutral-400">demo</span>
               </div>
-              <p className="mt-1 text-[11px] text-slate-500 leading-tight">
-                Full issue, template studio & revoke controls
+              <p className="mt-1 font-mono text-[10px] text-neutral-500 dark:text-neutral-400 leading-tight">
+                Issuing & telemetry
               </p>
             </button>
 
@@ -143,49 +156,52 @@ const LoginPage = () => {
               type="button"
               disabled={loading}
               onClick={() => handleQuickDemoLogin('student')}
-              className="group flex flex-col items-start rounded-xl border border-slate-200/90 bg-white p-3 text-left transition hover:border-emerald-500 hover:shadow-md hover:ring-2 hover:ring-emerald-500/20 active:scale-[0.98] disabled:opacity-50"
+              className="flex flex-col items-start rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-925 p-2.5 text-left transition hover:border-neutral-400 dark:hover:border-neutral-600 active:scale-[0.98] disabled:opacity-50"
             >
               <div className="flex w-full items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-900">
-                  <FaUserGraduate className="text-emerald-600" /> Demo Student
+                <span className="font-mono text-xs font-bold text-neutral-900 dark:text-white">
+                  Student
                 </span>
-                <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800">
-                  demologin.student
-                </span>
+                <span className="font-mono text-[9px] text-neutral-400">demo</span>
               </div>
-              <p className="mt-1 text-[11px] text-slate-500 leading-tight">
-                View personal awarded credentials & PDF downloads
+              <p className="mt-1 font-mono text-[10px] text-neutral-500 dark:text-neutral-400 leading-tight">
+                Vault & downloads
               </p>
             </button>
           </div>
         </div>
 
-        <div className="mb-5 flex rounded-xl bg-slate-100 p-1">
+        {/* Minimal Segmented Tab Switcher */}
+        <div className="mb-5 flex rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100/70 dark:bg-neutral-900/70 p-1">
           <button
             type="button"
             onClick={() => setMode('login')}
-            className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition ${
-              mode === 'login' ? 'bg-white text-slate-900 shadow' : 'text-slate-500'
+            className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition-all ${
+              mode === 'login'
+                ? 'bg-white dark:bg-neutral-850 text-neutral-950 dark:text-white shadow-xs'
+                : 'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
             }`}
           >
-            Login
+            Sign In
           </button>
           <button
             type="button"
             onClick={() => setMode('register')}
-            className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition ${
-              mode === 'register' ? 'bg-white text-slate-900 shadow' : 'text-slate-500'
+            className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition-all ${
+              mode === 'register'
+                ? 'bg-white dark:bg-neutral-850 text-neutral-950 dark:text-white shadow-xs'
+                : 'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
             }`}
           >
-            Register
+            Create Account
           </button>
         </div>
 
-        <form className="space-y-4" onSubmit={onSubmit}>
+        <form className="space-y-3.5" onSubmit={onSubmit}>
           {mode === 'register' && (
             <>
               <div>
-                <label htmlFor="role" className="mb-1 block text-sm font-semibold text-slate-700">
+                <label htmlFor="role" className="mb-1 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
                   Account Role
                 </label>
                 <select
@@ -193,14 +209,14 @@ const LoginPage = () => {
                   name="role"
                   value={formData.role}
                   onChange={onChange}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-brand-600"
+                  className="w-full rounded-xl border border-neutral-300 dark:border-neutral-800 bg-transparent px-3.5 py-2 text-xs text-neutral-900 dark:text-white outline-none focus:border-neutral-900 dark:focus:border-white"
                 >
-                  <option value="student">Student / User</option>
-                  <option value="admin">Admin</option>
+                  <option value="student" className="dark:bg-neutral-900">Student / User</option>
+                  <option value="admin" className="dark:bg-neutral-900">Admin</option>
                 </select>
               </div>
               <div>
-                <label htmlFor="name" className="mb-1 block text-sm font-semibold text-slate-700">
+                <label htmlFor="name" className="mb-1 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
                   Full Name
                 </label>
                 <input
@@ -210,12 +226,12 @@ const LoginPage = () => {
                   value={formData.name}
                   onChange={onChange}
                   required
-                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-brand-600"
+                  className="w-full rounded-xl border border-neutral-300 dark:border-neutral-800 bg-transparent px-3.5 py-2 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 outline-none focus:border-neutral-900 dark:focus:border-white"
                   placeholder="Alex Morgan"
                 />
               </div>
               <div>
-                <label htmlFor="organization" className="mb-1 block text-sm font-semibold text-slate-700">
+                <label htmlFor="organization" className="mb-1 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
                   Organization / University
                 </label>
                 <input
@@ -224,7 +240,7 @@ const LoginPage = () => {
                   type="text"
                   value={formData.organization}
                   onChange={onChange}
-                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-brand-600"
+                  className="w-full rounded-xl border border-neutral-300 dark:border-neutral-800 bg-transparent px-3.5 py-2 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 outline-none focus:border-neutral-900 dark:focus:border-white"
                   placeholder="Northbridge University"
                 />
               </div>
@@ -232,8 +248,8 @@ const LoginPage = () => {
           )}
 
           <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-semibold text-slate-700">
-              Email
+            <label htmlFor="email" className="mb-1 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+              Email Address
             </label>
             <input
               id="email"
@@ -242,13 +258,13 @@ const LoginPage = () => {
               value={formData.email}
               onChange={onChange}
               required
-              className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-brand-600"
-              placeholder="issuer@organization.com"
+              className="w-full rounded-xl border border-neutral-300 dark:border-neutral-800 bg-transparent px-3.5 py-2 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 outline-none focus:border-neutral-900 dark:focus:border-white"
+              placeholder="name@institution.edu"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-semibold text-slate-700">
+            <label htmlFor="password" className="mb-1 block text-xs font-medium text-neutral-700 dark:text-neutral-300">
               Password
             </label>
             <input
@@ -259,28 +275,32 @@ const LoginPage = () => {
               onChange={onChange}
               required
               minLength={8}
-              className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-brand-600"
-              placeholder="Minimum 8 characters"
+              className="w-full rounded-xl border border-neutral-300 dark:border-neutral-800 bg-transparent px-3.5 py-2 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 outline-none focus:border-neutral-900 dark:focus:border-white"
+              placeholder="••••••••"
             />
           </div>
 
-          {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">{error}</p>}
+          {error && (
+            <p className="rounded-xl border border-rose-300/80 bg-rose-50/80 dark:bg-rose-950/50 dark:border-rose-800 px-3.5 py-2 text-xs font-medium text-rose-700 dark:text-rose-300">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+            className="w-full rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 py-2.5 text-xs font-semibold transition hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitLabel}
           </button>
         </form>
 
-        <p className="mt-5 text-sm text-slate-600">
-          Need public verification only?{' '}
-          <Link to="/verify/TCX82LM92PQ" className="font-semibold text-brand-700 hover:underline">
-            Open Verify Page
+        <div className="mt-6 flex items-center justify-between border-t border-neutral-200/80 dark:border-neutral-850 pt-4 text-xs text-neutral-500">
+          <span>Need public verification?</span>
+          <Link to="/verify/TCRHAMY558G4C" className="font-mono text-neutral-900 dark:text-neutral-300 underline decoration-neutral-300 dark:decoration-neutral-700 underline-offset-4 hover:text-black dark:hover:text-white">
+            Inspect Sample Record →
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   )
