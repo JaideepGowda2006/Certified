@@ -5,18 +5,18 @@ import { FaUserShield, FaUserGraduate, FaBolt } from 'react-icons/fa'
 
 const DEMO_ACCOUNTS = {
   admin: {
-    email: 'admin@certified.test',
-    password: 'Password123!',
+    email: 'demologin.admin@certified.test',
+    password: 'DemoPassword123!',
     role: 'admin',
-    name: 'Certified Administrator',
+    name: 'Demo Administrator',
     badge: 'Admin Console',
     desc: 'Full issuing, template editing & revocation privileges',
   },
   student: {
-    email: 'student@certified.test',
-    password: 'Password123!',
+    email: 'demologin.student@certified.test',
+    password: 'DemoPassword123!',
     role: 'student',
-    name: 'Certified Student',
+    name: 'Demo Student',
     badge: 'Student Vault',
     desc: 'View personal awarded credentials & PDF certificates',
   },
@@ -131,7 +131,7 @@ const LoginPage = () => {
                   <FaUserShield className="text-brand-600" /> Demo Admin
                 </span>
                 <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[10px] font-semibold text-brand-800">
-                  Issuer
+                  demologin.admin
                 </span>
               </div>
               <p className="mt-1 text-[11px] text-slate-500 leading-tight">
@@ -150,7 +150,7 @@ const LoginPage = () => {
                   <FaUserGraduate className="text-emerald-600" /> Demo Student
                 </span>
                 <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800">
-                  Student
+                  demologin.student
                 </span>
               </div>
               <p className="mt-1 text-[11px] text-slate-500 leading-tight">

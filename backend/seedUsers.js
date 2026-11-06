@@ -21,6 +21,20 @@ const seedUsers = async () => {
       role: 'student',
       organization: 'Northbridge University',
     },
+    {
+      name: 'Demo Administrator',
+      email: 'demologin.admin@certified.test',
+      password: 'DemoPassword123!',
+      role: 'admin',
+      organization: 'Certified Authority (Demo)',
+    },
+    {
+      name: 'Demo Student',
+      email: 'demologin.student@certified.test',
+      password: 'DemoPassword123!',
+      role: 'student',
+      organization: 'Northbridge University (Demo)',
+    },
   ];
 
   for (const account of testAccounts) {
@@ -31,10 +45,10 @@ const seedUsers = async () => {
       existing.role = account.role;
       existing.organization = account.organization;
       await existing.save();
-      console.log(`Updated test account: ${account.email} (${account.role})`);
+      console.log(`Updated account: ${account.email} (${account.role})`);
     } else {
       await User.create(account);
-      console.log(`Created test account: ${account.email} (${account.role})`);
+      console.log(`Created account: ${account.email} (${account.role})`);
     }
   }
 
