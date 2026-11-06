@@ -1,6 +1,26 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { FaUserShield, FaUserGraduate, FaBolt } from 'react-icons/fa'
+
+const DEMO_ACCOUNTS = {
+  admin: {
+    email: 'admin@certified.test',
+    password: 'Password123!',
+    role: 'admin',
+    name: 'Certified Administrator',
+    badge: 'Admin Console',
+    desc: 'Full issuing, template editing & revocation privileges',
+  },
+  student: {
+    email: 'student@certified.test',
+    password: 'Password123!',
+    role: 'student',
+    name: 'Certified Student',
+    badge: 'Student Vault',
+    desc: 'View personal awarded credentials & PDF certificates',
+  },
+}
 
 const LoginPage = () => {
   const navigate = useNavigate()
@@ -25,6 +45,29 @@ const LoginPage = () => {
       ...previous,
       [event.target.name]: event.target.value,
     }))
+  }
+
+  const handleQuickDemoLogin = async (type) => {
+    const account = DEMO_ACCOUNTS[type]
+    if (!account) return
+    setLoading(true)
+    setError('')
+    setMode('login')
+    setFormData((previous) => ({
+      ...previous,
+      email: account.email,
+      password: account.password,
+    }))
+
+    try {
+      await login({ email: account.email, password: account.password })
+      navigate(redirectTo, { replace: true })
+    } catch (requestError) {
+      const message = requestError.response?.data?.message || 'Demo authentication failed. Please try again.'
+      setError(message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const onSubmit = async (event) => {
@@ -66,6 +109,55 @@ const LoginPage = () => {
               ? 'Access your portal to verify, manage, or issue certificates.'
               : 'Register as an Admin or Student to get started.'}
           </p>
+        </div>
+
+        {/* DEMO MODE SELECTOR CARDS */}
+        <div className="mb-6 rounded-2xl border border-brand-200/80 bg-gradient-to-br from-brand-50/70 via-white to-slate-50/50 p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-800">
+              <FaBolt className="text-amber-500 animate-pulse" /> 1-Click Demo Login
+            </span>
+            <span className="text-[11px] text-slate-500 font-medium">Instant Live Role Switch</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => handleQuickDemoLogin('admin')}
+              className="group flex flex-col items-start rounded-xl border border-slate-200/90 bg-white p-3 text-left transition hover:border-brand-500 hover:shadow-md hover:ring-2 hover:ring-brand-500/20 active:scale-[0.98] disabled:opacity-50"
+            >
+              <div className="flex w-full items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                  <FaUserShield className="text-brand-600" /> Demo Admin
+                </span>
+                <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[10px] font-semibold text-brand-800">
+                  Issuer
+                </span>
+              </div>
+              <p className="mt-1 text-[11px] text-slate-500 leading-tight">
+                Full issue, template studio & revoke controls
+              </p>
+            </button>
+
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => handleQuickDemoLogin('student')}
+              className="group flex flex-col items-start rounded-xl border border-slate-200/90 bg-white p-3 text-left transition hover:border-emerald-500 hover:shadow-md hover:ring-2 hover:ring-emerald-500/20 active:scale-[0.98] disabled:opacity-50"
+            >
+              <div className="flex w-full items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                  <FaUserGraduate className="text-emerald-600" /> Demo Student
+                </span>
+                <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800">
+                  Student
+                </span>
+              </div>
+              <p className="mt-1 text-[11px] text-slate-500 leading-tight">
+                View personal awarded credentials & PDF downloads
+              </p>
+            </button>
+          </div>
         </div>
 
         <div className="mb-5 flex rounded-xl bg-slate-100 p-1">
